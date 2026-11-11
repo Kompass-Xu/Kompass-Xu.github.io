@@ -1,0 +1,62 @@
+{
+  "entry": "/assets/optimized-5a698acb83b0/index.js",
+  "images": [
+    {
+      "source": "fish.png",
+      "before": 965230,
+      "after": 693984,
+      "mode": "lossless"
+    },
+    {
+      "source": "spiral.png",
+      "before": 801295,
+      "after": 499336,
+      "mode": "lossless"
+    },
+    {
+      "source": "stone.png",
+      "before": 904666,
+      "after": 590580,
+      "mode": "lossless"
+    },
+    {
+      "source": "prismatic.png",
+      "before": 1012447,
+      "after": 626084,
+      "mode": "lossless"
+    },
+    {
+      "source": "WechatIMG524.jpg",
+      "before": 161530,
+      "after": 79282,
+      "mode": "lossless"
+    },
+    {
+      "source": "loading2.webp",
+      "before": 58156,
+      "after": 33414,
+      "mode": "resized spinner",
+      "dimensions": [
+        439,
+        512
+      ]
+    }
+  ],
+  "lazy_modules": [
+    "DailyMotion-Bv-uIwya.js",
+    "Facebook-DGdp2hx8.js",
+    "FilePlayer-CIEEx5Zo.js",
+    "Kaltura-To3I9-o8.js",
+    "Mixcloud-EsglDwpR.js",
+    "Mux-CLQnnKvV.js",
+    "Preview-CDKmKnxW.js",
+    "SoundCloud-OuDowozP.js",
+    "Streamable-CKaGLABy.js",
+    "Twitch-CxredmEQ.js",
+    "Vidyard-BAiuu1AD.js",
+    "Vimeo-DX5sBcBa.js",
+    "Wistia-CBFrhxft.js",
+    "YouTube-C5Bk0ZHc.js"
+  ],
+  "original_commit": "00c968783e444201bb7bf7f16eeec3044064c2b9"
+}
