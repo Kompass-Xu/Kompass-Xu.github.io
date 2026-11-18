@@ -7,13 +7,15 @@ const pressProfiles = {
   wood:  { duration: .30, strength: .86, strings: [[293.66, 0, .69], [440, .038, .21]] },
   cloth: { duration: .33, strength: .78, strings: [[329.63, 0, .64], [440, .052, .22]] },
   water: { duration: .36, strength: .75, strings: [[392, 0, .60, 2], [587.33, .062, .19, -4]] },
-  chime: { duration: .41, strength: .81, strings: [[293.66, 0, .57], [587.33, .055, .25]] }
+  chime: { duration: .41, strength: .81, strings: [[293.66, 0, .57], [587.33, .055, .25]] },
+  chaseTap: { duration: .105, strength: .52, strings: [[523.25, 0, .31]] },
+  chaseMiss: { duration: .34, strength: .76, strings: [[293.66, 0, .58], [196, .075, .38, -6]] }
 };
 
 const stringPartials = [1, .40, .22, .10, .042];
 let audio;
 let output;
-const lastStart = { hover: -Infinity, press: -Infinity };
+const lastStart = { hover: -Infinity, press: -Infinity, alert: -Infinity };
 const samples = new Map();
 
 function makeSample(profile) {
@@ -61,7 +63,7 @@ export async function playGameSound(name = "wood", interaction = "press") {
     if (audio.state !== "running") return;
 
     const now = performance.now();
-    const type = hovering ? "hover" : "press";
+    const type = hovering ? "hover" : name === "chaseMiss" ? "alert" : "press";
     if (now - lastStart[type] < (hovering ? 55 : 32)) return;
     lastStart[type] = now;
     const profile = hovering ? hoverProfile : pressProfiles[name] ?? pressProfiles.wood;

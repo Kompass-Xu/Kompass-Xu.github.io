@@ -112,8 +112,130 @@
   content: "";
 }
 
+.game-chase {
+  --chase-size: min(122px, 19dvh);
+  --chase-edge: #a4bedf;
+  --chase-glow: #5da7fa;
+  --chase-core: #0d1c35;
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  color: #edf4ff;
+  text-align: center;
+}
+
+.game-player__frame .game-chase {
+  --chase-size: 182px;
+  gap: 12px;
+  font-size: 24px;
+}
+
+.game-chase__tap {
+  position: relative;
+  display: grid;
+  width: var(--chase-size);
+  height: var(--chase-size);
+  place-items: center;
+  border: 1px solid var(--chase-edge);
+  border-radius: 50%;
+  background: conic-gradient(var(--chase-glow) var(--chase-charge), #344e76 0);
+  box-shadow: 0 0 0 3px #101b35bd, 0 4px 20px #020611a3;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  transition: transform .11s ease, border-color .16s ease, box-shadow .16s ease;
+}
+
+.game-chase__tap:not(:disabled):active {
+  transform: scale(.94);
+}
+
+.game-chase__tap:focus-visible {
+  outline: 2px solid #e8f3ff;
+  outline-offset: 4px;
+}
+
+.game-chase__core {
+  position: relative;
+  display: grid;
+  width: 89%;
+  height: 89%;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid #bdccee63;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 85%, #263e67, var(--chase-core) 75%);
+}
+
+.game-chase__liquid {
+  position: absolute;
+  inset: auto 0 0;
+  height: var(--chase-charge);
+  border-top: 2px solid #bfeaff;
+  border-radius: 54% 42% 0 0 / 7% 6% 0 0;
+  background:
+    repeating-linear-gradient(115deg, #c2e8ff29 0 2px, transparent 3px 11px),
+    linear-gradient(#4f9eea, #245382 65%, #152d52);
+  box-shadow: 0 -2px 11px #6abaff70;
+  transition: height .12s ease-out;
+}
+
+.game-chase__readout {
+  position: relative;
+  color: #f6f8ff;
+  font-size: calc(var(--chase-size) * .25);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 2px 6px #051024;
+}
+
+.game-chase__caption {
+  display: block;
+  padding: 5px 13px;
+  border: 1px solid #b9cbe36e;
+  border-radius: 7px;
+  background: #0c1933ed;
+  font-weight: 720;
+}
+
+.game-chase[data-phase="missed"] {
+  --chase-edge: #ffc7bd;
+  --chase-glow: #f25b52;
+  --chase-core: #320d20;
+  color: #ffe3d8;
+}
+
+.game-chase[data-phase="missed"] .game-chase__tap {
+  background: #d35350;
+  box-shadow: 0 0 0 3px #e6454e89, 0 0 24px #ff5a4b75;
+  animation: game-chase-alert .65s ease-out;
+}
+
+.game-chase[data-phase="missed"] .game-chase__core {
+  background: radial-gradient(ellipse at center, #8b2739, #3b1025 75%);
+}
+
+.game-chase[data-phase="missed"] .game-chase__liquid {
+  opacity: 0;
+}
+
+.game-chase[data-phase="missed"] .game-chase__caption {
+  border-color: #ff9e8c;
+  background: #42172cf2;
+}
+
+@keyframes game-chase-alert {
+  from { box-shadow: 0 0 0 2px #ffc6b8b8, 0 0 15px #ff5a4b90; }
+  65% { box-shadow: 0 0 0 10px #f15b4c19, 0 0 27px #ff5a4b66; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .game-player__dye-marker {
+  .game-player__dye-marker,
+  .game-chase__tap,
+  .game-chase__liquid {
     transition: none;
+  }
+
+  .game-chase[data-phase="missed"] .game-chase__tap {
+    animation: none;
   }
 }

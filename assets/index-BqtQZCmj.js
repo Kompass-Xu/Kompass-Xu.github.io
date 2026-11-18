@@ -1,4 +1,4 @@
-import { playGameSound } from "./game-sound.js?v=2";
+import { playGameSound } from "./game-sound.js?v=3";
 import { canEnterGameFullscreen, enterOnFirstGameAction, isGameFullscreen, toggleGameFullscreen } from "./game-fullscreen.js";
 var wS=Object.defineProperty;var jp=e=>{throw TypeError(e)};var bS=(e,t,n)=>t in e?wS(e,t,{enumerable:!0,configurable:!0,writable:!0,value:n}):e[t]=n;var Kn=(e,t,n)=>bS(e,typeof t!="symbol"?t+"":t,n),Op=(e,t,n)=>t.has(e)||jp("Cannot "+n);var Sr=(e,t,n)=>(Op(e,t,"read from private field"),n?n.call(e):t.get(e)),El=(e,t,n)=>t.has(e)?jp("Cannot add the same private member more than once"):t instanceof WeakSet?t.add(e):t.set(e,n),Cl=(e,t,n,r)=>(Op(e,t,"write to private field"),r?r.call(e,n):t.set(e,n),n);function SS(e,t){for(var n=0;n<t.length;n++){const r=t[n];if(typeof r!="string"&&!Array.isArray(r)){for(const o in r)if(o!=="default"&&!(o in e)){const i=Object.getOwnPropertyDescriptor(r,o);i&&Object.defineProperty(e,o,i.get?i:{enumerable:!0,get:()=>r[o]})}}}return Object.freeze(Object.defineProperty(e,Symbol.toStringTag,{value:"Module"}))}(function(){const t=document.createElement("link").relList;if(t&&t.supports&&t.supports("modulepreload"))return;for(const o of document.querySelectorAll('link[rel="modulepreload"]'))r(o);new MutationObserver(o=>{for(const i of o)if(i.type==="childList")for(const s of i.addedNodes)s.tagName==="LINK"&&s.rel==="modulepreload"&&r(s)}).observe(document,{childList:!0,subtree:!0});function n(o){const i={};return o.integrity&&(i.integrity=o.integrity),o.referrerPolicy&&(i.referrerPolicy=o.referrerPolicy),o.crossOrigin==="use-credentials"?i.credentials="include":o.crossOrigin==="anonymous"?i.credentials="omit":i.credentials="same-origin",i}function r(o){if(o.ep)return;o.ep=!0;const i=n(o);fetch(o.href,i)}})();var Tl=typeof globalThis<"u"?globalThis:typeof window<"u"?window:typeof global<"u"?global:typeof self<"u"?self:{};function Na(e){return e&&e.__esModule&&Object.prototype.hasOwnProperty.call(e,"default")?e.default:e}function PS(e){if(e.__esModule)return e;var t=e.default;if(typeof t=="function"){var n=function r(){return this instanceof r?Reflect.construct(t,arguments,this.constructor):t.apply(this,arguments)};n.prototype=t.prototype}else n={};return Object.defineProperty(n,"__esModule",{value:!0}),Object.keys(e).forEach(function(r){var o=Object.getOwnPropertyDescriptor(e,r);Object.defineProperty(n,r,o.get?o:{enumerable:!0,get:function(){return e[r]}})}),n}var uy={exports:{}},La={},cy={exports:{}},z={};/**
  * @license React
@@ -218,9 +218,27 @@ function GameVideo({ bespoke, video, retry }) {
     video.onEnded?.();
   }
 
+  const cue = video.chaseCue;
+  const followChase = Boolean(cue && time >= cue.ready - .3 && time < cue.alertUntil && playing && !menuOpen && status === "ready");
+
+  m.useEffect(() => {
+    if (!followChase) return;
+    let frame;
+    let sampled = -Infinity;
+    function sample(now) {
+      if (now - sampled >= 65) {
+        sampled = now;
+        setTime(node.current.currentTime);
+      }
+      frame = requestAnimationFrame(sample);
+    }
+    frame = requestAnimationFrame(sample);
+    return () => cancelAnimationFrame(frame);
+  }, [followChase]);
+
   const actions = (video.children || []).filter(({ visible }) => visible ? visible(time) : finished);
   function renderAction(component) {
-    if (component.type === Tb) return y.jsx(Tb, { timeout: Math.max(1, Math.ceil(7.5 - time)) });
+    if (component.type === ChaseChallenge) return y.jsx(ChaseChallenge, { ...component.props, time, player: node, running: playing && status === "ready" });
     return component;
   }
   const showRecovery = status === "error" || status === "blocked" || (stalled && playing);
@@ -1217,18 +1235,106 @@ function Qi({ rotate = 360, disabled, onCallback }) {
   });
 }
 
-function Cb() {
-  const [clicks, setClicks] = m.useState(0);
-  return y.jsx("button", {
-    type: "button", className: "game-button game-button--primary game-challenge",
-    onClick: () => setClicks(count => count + 1),
-    children: clicks ? gameWords(`${clicks} ${clicks === 1 ? "tap" : "taps"}`, `已连点 ${clicks} 次`) : gameWords("Tap quickly", "快速连点")
+const chaseCues = {
+  3: { ready: 5.2, start: 7.5, miss: 10.4, alertUntil: 11.7 },
+  4: { ready: 4.5, start: 6.8, miss: 9.35, alertUntil: 10.65 }
+};
+const slippingBeats = [[.23, .72], [.51, .65], [.76, .48], [.91, .35]];
+// The hand slips in both films, so the charge always stays short of full.
+const chaseChargeLimit = 96;
+
+function chaseChargeAt(snapshot, time, cue) {
+  let charge = snapshot.charge;
+  let cursor = snapshot.time;
+  for (const [fraction, retention] of slippingBeats) {
+    const slip = cue.start + (cue.miss - cue.start) * fraction;
+    if (slip <= cursor || slip > time) continue;
+    charge = Math.max(0, charge - (slip - cursor) * 5) * retention;
+    cursor = slip;
+  }
+  return Math.max(0, charge - (time - cursor) * 5);
+}
+
+function ChaseChallenge({ cue, time, player, running }) {
+  const { playEffect } = m.useContext(gameSession);
+  const [charge, setCharge] = m.useState(() => ({ charge: 0, time: cue.start }));
+  const previousTime = m.useRef(time);
+  const sounded = m.useRef(false);
+  const phase = time >= cue.miss ? "missed" : time < cue.start ? "ready" : "active";
+  const canTap = phase === "active" && running;
+
+  m.useEffect(() => {
+    if (time < previousTime.current - .15) setCharge({ charge: 0, time: cue.start });
+    previousTime.current = time;
+  }, [time, cue.start]);
+
+  m.useEffect(() => {
+    if (phase !== "missed") {
+      sounded.current = false;
+    } else if (running && !sounded.current) {
+      sounded.current = true;
+      playEffect("chaseMiss");
+    }
+  }, [phase, running, playEffect]);
+
+  function tap() {
+    const media = player.current;
+    const now = media?.currentTime ?? time;
+    if (!canTap || media?.paused || now < cue.start || now >= cue.miss) return;
+    setCharge(snapshot => {
+      const current = now < snapshot.time ? 0 : chaseChargeAt(snapshot, now, cue);
+      return { charge: current + (chaseChargeLimit - current) * .235, time: now };
+    });
+    playEffect("chaseTap");
+  }
+
+  const value = phase === "active" ? Math.round(chaseChargeAt(charge, Math.max(time, charge.time), cue)) : 0;
+  const count = Math.max(1, Math.ceil(cue.start - time));
+  const caption = phase === "missed" ? gameWords("Missed the grab", "抓空了") :
+    phase === "ready" ? gameWords("Get ready", "准备") : gameWords("Tap rapidly", "快速连点");
+
+  return y.jsxs("div", {
+    className: "game-chase", "data-phase": phase,
+    style: { "--chase-charge": `${value}%` },
+    children: [
+      y.jsx("button", {
+        type: "button", className: "game-chase__tap",
+        disabled: !canTap, "data-sound": "none",
+        "aria-label": gameLabel("Tap rapidly to charge", "快速连点积蓄能量"),
+        onClick: tap,
+        children: y.jsxs("span", {
+          className: "game-chase__core", "aria-hidden": true,
+          children: [
+            y.jsx("span", { className: "game-chase__liquid" }),
+            y.jsx("span", { className: "game-chase__readout", children: phase === "missed" ? "!" :
+              phase === "ready" ? count : `${value}%` })
+          ]
+        })
+      }),
+      y.jsx("meter", { className: "sr-only", min: 0, max: 100, value, "aria-label": gameLabel("Chase charge", "追逐能量") }),
+      y.jsx("span", { className: "game-chase__caption", role: phase === "missed" ? "status" : undefined, children: caption })
+    ]
   });
 }
 
-function Tb({ timeout }) {
-  return y.jsx("span", { className: "game-gesture__hint", children: gameWords(`Get ready · ${timeout}s`, `连点挑战将在 ${timeout} 秒后开始`) });
+function chaseVideo(holder, number) {
+  const cue = chaseCues[number];
+  return y.jsx(I, {
+    bespoke: holder,
+    video: {
+      url: `https://kompass.oss-cn-beijing.aliyuncs.com/videos/${number}.mp4`,
+      playing: true,
+      chaseCue: cue,
+      children: [{
+        key: "chase-charge", position: { left: 230, top: 360 },
+        component: y.jsx(ChaseChallenge, { cue }),
+        visible: time => time >= cue.ready && time < cue.alertUntil
+      }],
+      onEnded: () => holder.next()
+    }
+  });
 }
+
 const oI={name:"天降飞贼",nexts:["p3","p4"]};
 function iI() {
   const holder = D();
@@ -1243,7 +1349,7 @@ function iI() {
     }
   });
 }
-const sI=Object.freeze(Object.defineProperty({__proto__:null,default:iI,opts:oI},Symbol.toStringTag,{value:"Module"})),aI={name:"从正面几乎抓住",nexts:["p5"]};function lI(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/3.mp4",playing:!0,children:[{key:"timeout",position:{left:600,top:400},component:y.jsx(Tb,{timeout:3}),visible:t=>t>4.5&&t<7.5},{key:"p4",position:{left:600,top:400},component:y.jsx(Cb,{}),visible:t=>t>7.5&&t<11}],onEnded:()=>e.next()}})}const uI=Object.freeze(Object.defineProperty({__proto__:null,default:lI,opts:aI},Symbol.toStringTag,{value:"Module"})),cI={name:"来到院落门口",nexts:["p6"],condition:e=>e.next===void 0||e.next==="p5"};function fI(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/5.mp4",playing:!0,children:[{key:"p5",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:()=>e.next()})}]}})}const dI=Object.freeze(Object.defineProperty({__proto__:null,default:fI,opts:cI},Symbol.toStringTag,{value:"Module"})),pI={name:"进入院落，偶遇大师",nexts:["p8"]};function hI(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/6.mp4",playing:!0,children:[{key:"p8",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:()=>e.next()})}]}})}const mI=Object.freeze(Object.defineProperty({__proto__:null,default:hI,opts:pI},Symbol.toStringTag,{value:"Module"})),gI={name:"捞出方巾",nexts:["p39"]};function yI(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/38.mp4",playing:!0,children:[{key:"p36",position:{right:660,top:360},component:y.jsx(_t,{size:280,direction:"top",onCallback:()=>e.next()})}]}})}const vI=Object.freeze(Object.defineProperty({__proto__:null,default:yI,opts:gI},Symbol.toStringTag,{value:"Module"})),xI={name:"结局一",nexts:["p6"],condition:e=>e.next===void 0||e.next==="p5"};function wI(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/41.mp4",playing:!0,children:[{key:"p5",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:()=>e.pushAndStore("end",void 0,{})})}]}})}const bI=Object.freeze(Object.defineProperty({__proto__:null,default:wI,opts:xI},Symbol.toStringTag,{value:"Module"})),SI={name:"成品-螺旋纹",nexts:["p41"]};function PI(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/40.mp4",playing:!0,children:[{key:"p8",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:()=>e.next()})}]}})}const _I=Object.freeze(Object.defineProperty({__proto__:null,default:PI,opts:SI},Symbol.toStringTag,{value:"Module"})),EI={name:"结局二",nexts:["p6"],condition:e=>e.next===void 0||e.next==="p5"};function CI(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/43.mp4",playing:!0,children:[{key:"p5",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:()=>e.pushAndStore("end",void 0,{})})}]}})}const TI=Object.freeze(Object.defineProperty({__proto__:null,default:CI,opts:EI},Symbol.toStringTag,{value:"Module"})),kI={name:"成品-鱼鳞纹",nexts:["p43"]};function jI(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/42.mp4",playing:!0,children:[{key:"p8",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:()=>e.next()})}]}})}const OI=Object.freeze(Object.defineProperty({__proto__:null,default:jI,opts:kI},Symbol.toStringTag,{value:"Module"})),AI={name:"结局三",nexts:["p6"],condition:e=>e.next===void 0||e.next==="p5"};function RI(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/45.mp4",playing:!0,children:[{key:"p5",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:()=>e.pushAndStore("end",void 0,{})})}]}})}const MI=Object.freeze(Object.defineProperty({__proto__:null,default:RI,opts:AI},Symbol.toStringTag,{value:"Module"})),NI={name:"成品-棱形纹",nexts:["p45"]};function LI(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/44.mp4",playing:!0,children:[{key:"p8",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:()=>e.next()})}]}})}const DI=Object.freeze(Object.defineProperty({__proto__:null,default:LI,opts:NI},Symbol.toStringTag,{value:"Module"})),II={name:"结局四 ",nexts:["p6"],condition:e=>e.next===void 0||e.next==="p5"};function VI(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/47.mp4",playing:!0,children:[{key:"p5",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:()=>e.pushAndStore("end",void 0,{})})}]}})}const $I=Object.freeze(Object.defineProperty({__proto__:null,default:VI,opts:II},Symbol.toStringTag,{value:"Module"})),FI={name:"成品-包物扎",nexts:["p47"]};function zI(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/46.mp4",playing:!0,children:[{key:"p8",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:()=>e.next()})}]}})}const BI=Object.freeze(Object.defineProperty({__proto__:null,default:zI,opts:FI},Symbol.toStringTag,{value:"Module"})),UI={name:"展示氧化",nexts:["p40","p42","p44","p46"]};function WI(){const e=D(),t=()=>e.data.data==="螺旋纹"?e.push("p40"):e.data.data==="鱼鳞纹"?e.push("p42"):e.data.data==="棱形纹"?e.push("p44"):e.data.data==="包物扎"?e.push("p46"):e.push("p40");return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/39.mp4",playing:!0,children:[{key:"p8",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:t})}]}})}const HI=Object.freeze(Object.defineProperty({__proto__:null,default:WI,opts:UI},Symbol.toStringTag,{value:"Module"})),KI=eb,GI=tb,YI=nb,kb=m.forwardRef(({className:e,...t},n)=>y.jsx(dl,{ref:n,className:de("fixed inset-0 z-50 bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",e),...t}));kb.displayName=dl.displayName;const jb=m.forwardRef(({className:e,children:t,...n},r)=>y.jsxs(YI,{children:[y.jsx(kb,{}),y.jsxs(pl,{ref:r,className:de("fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",e),...n,children:[t,y.jsxs(rb,{className:"absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground",children:[y.jsx(Z0,{className:"w-4 h-4"}),y.jsx("span",{className:"sr-only",children:"Close"})]})]})]}));jb.displayName=pl.displayName;const Ob=({className:e,...t})=>y.jsx("div",{className:de("flex flex-col space-y-1.5 text-center sm:text-left",e),...t});Ob.displayName="DialogHeader";const Ab=m.forwardRef(({className:e,...t},n)=>y.jsx(hl,{ref:n,className:de("text-lg font-semibold leading-none tracking-tight",e),...t}));Ab.displayName=hl.displayName;const XI=m.forwardRef(({className:e,...t},n)=>y.jsx(ml,{ref:n,className:de("text-sm text-muted-foreground",e),...t}));XI.displayName=ml.displayName;
+const sI=Object.freeze(Object.defineProperty({__proto__:null,default:iI,opts:oI},Symbol.toStringTag,{value:"Module"})),aI={name:"从正面几乎抓住",nexts:["p5"]};function lI(){return chaseVideo(D(),3)}const uI=Object.freeze(Object.defineProperty({__proto__:null,default:lI,opts:aI},Symbol.toStringTag,{value:"Module"})),cI={name:"来到院落门口",nexts:["p6"],condition:e=>e.next===void 0||e.next==="p5"};function fI(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/5.mp4",playing:!0,children:[{key:"p5",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:()=>e.next()})}]}})}const dI=Object.freeze(Object.defineProperty({__proto__:null,default:fI,opts:cI},Symbol.toStringTag,{value:"Module"})),pI={name:"进入院落，偶遇大师",nexts:["p8"]};function hI(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/6.mp4",playing:!0,children:[{key:"p8",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:()=>e.next()})}]}})}const mI=Object.freeze(Object.defineProperty({__proto__:null,default:hI,opts:pI},Symbol.toStringTag,{value:"Module"})),gI={name:"捞出方巾",nexts:["p39"]};function yI(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/38.mp4",playing:!0,children:[{key:"p36",position:{right:660,top:360},component:y.jsx(_t,{size:280,direction:"top",onCallback:()=>e.next()})}]}})}const vI=Object.freeze(Object.defineProperty({__proto__:null,default:yI,opts:gI},Symbol.toStringTag,{value:"Module"})),xI={name:"结局一",nexts:["p6"],condition:e=>e.next===void 0||e.next==="p5"};function wI(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/41.mp4",playing:!0,children:[{key:"p5",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:()=>e.pushAndStore("end",void 0,{})})}]}})}const bI=Object.freeze(Object.defineProperty({__proto__:null,default:wI,opts:xI},Symbol.toStringTag,{value:"Module"})),SI={name:"成品-螺旋纹",nexts:["p41"]};function PI(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/40.mp4",playing:!0,children:[{key:"p8",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:()=>e.next()})}]}})}const _I=Object.freeze(Object.defineProperty({__proto__:null,default:PI,opts:SI},Symbol.toStringTag,{value:"Module"})),EI={name:"结局二",nexts:["p6"],condition:e=>e.next===void 0||e.next==="p5"};function CI(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/43.mp4",playing:!0,children:[{key:"p5",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:()=>e.pushAndStore("end",void 0,{})})}]}})}const TI=Object.freeze(Object.defineProperty({__proto__:null,default:CI,opts:EI},Symbol.toStringTag,{value:"Module"})),kI={name:"成品-鱼鳞纹",nexts:["p43"]};function jI(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/42.mp4",playing:!0,children:[{key:"p8",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:()=>e.next()})}]}})}const OI=Object.freeze(Object.defineProperty({__proto__:null,default:jI,opts:kI},Symbol.toStringTag,{value:"Module"})),AI={name:"结局三",nexts:["p6"],condition:e=>e.next===void 0||e.next==="p5"};function RI(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/45.mp4",playing:!0,children:[{key:"p5",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:()=>e.pushAndStore("end",void 0,{})})}]}})}const MI=Object.freeze(Object.defineProperty({__proto__:null,default:RI,opts:AI},Symbol.toStringTag,{value:"Module"})),NI={name:"成品-棱形纹",nexts:["p45"]};function LI(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/44.mp4",playing:!0,children:[{key:"p8",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:()=>e.next()})}]}})}const DI=Object.freeze(Object.defineProperty({__proto__:null,default:LI,opts:NI},Symbol.toStringTag,{value:"Module"})),II={name:"结局四 ",nexts:["p6"],condition:e=>e.next===void 0||e.next==="p5"};function VI(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/47.mp4",playing:!0,children:[{key:"p5",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:()=>e.pushAndStore("end",void 0,{})})}]}})}const $I=Object.freeze(Object.defineProperty({__proto__:null,default:VI,opts:II},Symbol.toStringTag,{value:"Module"})),FI={name:"成品-包物扎",nexts:["p47"]};function zI(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/46.mp4",playing:!0,children:[{key:"p8",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:()=>e.next()})}]}})}const BI=Object.freeze(Object.defineProperty({__proto__:null,default:zI,opts:FI},Symbol.toStringTag,{value:"Module"})),UI={name:"展示氧化",nexts:["p40","p42","p44","p46"]};function WI(){const e=D(),t=()=>e.data.data==="螺旋纹"?e.push("p40"):e.data.data==="鱼鳞纹"?e.push("p42"):e.data.data==="棱形纹"?e.push("p44"):e.data.data==="包物扎"?e.push("p46"):e.push("p40");return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/39.mp4",playing:!0,children:[{key:"p8",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:t})}]}})}const HI=Object.freeze(Object.defineProperty({__proto__:null,default:WI,opts:UI},Symbol.toStringTag,{value:"Module"})),KI=eb,GI=tb,YI=nb,kb=m.forwardRef(({className:e,...t},n)=>y.jsx(dl,{ref:n,className:de("fixed inset-0 z-50 bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",e),...t}));kb.displayName=dl.displayName;const jb=m.forwardRef(({className:e,children:t,...n},r)=>y.jsxs(YI,{children:[y.jsx(kb,{}),y.jsxs(pl,{ref:r,className:de("fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",e),...n,children:[t,y.jsxs(rb,{className:"absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground",children:[y.jsx(Z0,{className:"w-4 h-4"}),y.jsx("span",{className:"sr-only",children:"Close"})]})]})]}));jb.displayName=pl.displayName;const Ob=({className:e,...t})=>y.jsx("div",{className:de("flex flex-col space-y-1.5 text-center sm:text-left",e),...t});Ob.displayName="DialogHeader";const Ab=m.forwardRef(({className:e,...t},n)=>y.jsx(hl,{ref:n,className:de("text-lg font-semibold leading-none tracking-tight",e),...t}));Ab.displayName=hl.displayName;const XI=m.forwardRef(({className:e,...t},n)=>y.jsx(ml,{ref:n,className:de("text-sm text-muted-foreground",e),...t}));XI.displayName=ml.displayName;
 const QI = { name: "搅拌染缸", nexts: ["p38", "p37-1"] };
 function ZI() {
   const holder = D();
@@ -1395,7 +1501,7 @@ function mS({ bespoke, items, initialActive = 0, expandedShare }) {
   });
 }
 
-const m$={name:"扎法的选择",nexts:["p14","p20","p24","p30"]},g$=[{title:"Spiral",buttonText:"Spiral Pattern",chooses:{next:"p14"},bg:"/spiral.png"},{title:"Fish Scales",buttonText:"Fish Scales Pattern",chooses:{next:"p20"},bg:"/fish.png"},{title:"Prismatic",buttonText:"Prismatic Pattern",chooses:{next:"p24"},bg:"/prismatic.png"},{title:"Stone-wrapping",buttonText:"Stone-wrapping Parttern",chooses:{next:"p30"},bg:"/stone.png"}];function y$(){const e=D();return y.jsx(mS,{bespoke:e,items:g$,expandedShare:45})}const v$=Object.freeze(Object.defineProperty({__proto__:null,default:y$,opts:m$},Symbol.toStringTag,{value:"Module"})),x$={name:"扎法的选择很多",nexts:["p13"]};function w$(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/12.mp4",playing:!0,children:[{key:"p13",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:()=>e.next()})}]}})}const b$=Object.freeze(Object.defineProperty({__proto__:null,default:w$,opts:x$},Symbol.toStringTag,{value:"Module"})),S$={name:"搞一根木棍",nexts:["p10","p11"],condition:e=>e.next==="p9"};function P$(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/9.mp4",playing:!0,children:[{key:"p10",position:{left:400,bottom:150},component:y.jsx(ja,{onClick:()=>e.push("p10"),children:gameWords("Grab the stick","抢嘴里的木棍")})},{key:"p11",position:{right:400,bottom:150},component:y.jsx(ja,{onClick:()=>e.push("p11"),children:gameWords("Wait for the master","等老师回来")})}]}})}const _$=Object.freeze(Object.defineProperty({__proto__:null,default:P$,opts:S$},Symbol.toStringTag,{value:"Module"})),E$={name:"扎和染的选择",nexts:["p9","p34"]};function C$(){const e=D(),t=m.useMemo(()=>[{title:"TIE",description:"You'll explore the variety of wonderful ties that produce different beautiful patterns on the linen",buttonText:"TIE",chooses:{next:"p9"},bg:"/f4d07d78dca4782d6f20cb233bb8457.jpg",onCallback:()=>e.push(bn(e.data)?"p9":"p13")},{title:"DYE",description:"After choosing one of the ties, you will experience the dyeing process and eventually enjoy the corresponding patterns, one of which is your mother's favorite.",buttonText:"DYE",chooses:{next:"p34"},disabled:bn(e.data),bg:"/569119c037b93acef424214c6e70ec9.jpg",tooltip:bn(e.data)?"Tip:At least one method of tie can becompleted before the staining interfacecan be opened.(After completing page 19.23.29.33)":void 0}],[e.data,e]);return y.jsx(mS,{bespoke:e,initialActive:bn(e.data)?0:1,items:t,expandedShare:70})}const T$=Object.freeze(Object.defineProperty({__proto__:null,default:C$,opts:E$},Symbol.toStringTag,{value:"Module"})),k$={name:"从侧面几乎抓住",nexts:["p5"]};function j$(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/4.mp4",playing:!0,children:[{key:"timeout",position:{left:600,top:400},component:y.jsx(Tb,{timeout:3}),visible:t=>t>4.5&&t<7.5},{key:"p4",position:{left:600,top:400},component:y.jsx(Cb,{}),visible:t=>t>7.5&&t<11}],onEnded:()=>e.next()}})}const O$=Object.freeze(Object.defineProperty({__proto__:null,default:j$,opts:k$},Symbol.toStringTag,{value:"Module"})),A$={name:"结尾",nexts:[]};function R$(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"/videos/end.mp4",playing:!0,children:[{key:"end",position:{bottom:50,left:768},component:y.jsx(me,{label:["Return home","回到首页"],onCallback:()=>e.pushAndStore("preview",void 0,{})})}]}})}const M$=Object.freeze(Object.defineProperty({__proto__:null,default:R$,opts:A$},Symbol.toStringTag,{value:"Module"}))
+const m$={name:"扎法的选择",nexts:["p14","p20","p24","p30"]},g$=[{title:"Spiral",buttonText:"Spiral Pattern",chooses:{next:"p14"},bg:"/spiral.png"},{title:"Fish Scales",buttonText:"Fish Scales Pattern",chooses:{next:"p20"},bg:"/fish.png"},{title:"Prismatic",buttonText:"Prismatic Pattern",chooses:{next:"p24"},bg:"/prismatic.png"},{title:"Stone-wrapping",buttonText:"Stone-wrapping Parttern",chooses:{next:"p30"},bg:"/stone.png"}];function y$(){const e=D();return y.jsx(mS,{bespoke:e,items:g$,expandedShare:45})}const v$=Object.freeze(Object.defineProperty({__proto__:null,default:y$,opts:m$},Symbol.toStringTag,{value:"Module"})),x$={name:"扎法的选择很多",nexts:["p13"]};function w$(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/12.mp4",playing:!0,children:[{key:"p13",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:()=>e.next()})}]}})}const b$=Object.freeze(Object.defineProperty({__proto__:null,default:w$,opts:x$},Symbol.toStringTag,{value:"Module"})),S$={name:"搞一根木棍",nexts:["p10","p11"],condition:e=>e.next==="p9"};function P$(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/9.mp4",playing:!0,children:[{key:"p10",position:{left:400,bottom:150},component:y.jsx(ja,{onClick:()=>e.push("p10"),children:gameWords("Grab the stick","抢嘴里的木棍")})},{key:"p11",position:{right:400,bottom:150},component:y.jsx(ja,{onClick:()=>e.push("p11"),children:gameWords("Wait for the master","等老师回来")})}]}})}const _$=Object.freeze(Object.defineProperty({__proto__:null,default:P$,opts:S$},Symbol.toStringTag,{value:"Module"})),E$={name:"扎和染的选择",nexts:["p9","p34"]};function C$(){const e=D(),t=m.useMemo(()=>[{title:"TIE",description:"You'll explore the variety of wonderful ties that produce different beautiful patterns on the linen",buttonText:"TIE",chooses:{next:"p9"},bg:"/f4d07d78dca4782d6f20cb233bb8457.jpg",onCallback:()=>e.push(bn(e.data)?"p9":"p13")},{title:"DYE",description:"After choosing one of the ties, you will experience the dyeing process and eventually enjoy the corresponding patterns, one of which is your mother's favorite.",buttonText:"DYE",chooses:{next:"p34"},disabled:bn(e.data),bg:"/569119c037b93acef424214c6e70ec9.jpg",tooltip:bn(e.data)?"Tip:At least one method of tie can becompleted before the staining interfacecan be opened.(After completing page 19.23.29.33)":void 0}],[e.data,e]);return y.jsx(mS,{bespoke:e,initialActive:bn(e.data)?0:1,items:t,expandedShare:70})}const T$=Object.freeze(Object.defineProperty({__proto__:null,default:C$,opts:E$},Symbol.toStringTag,{value:"Module"})),k$={name:"从侧面几乎抓住",nexts:["p5"]};function j$(){return chaseVideo(D(),4)}const O$=Object.freeze(Object.defineProperty({__proto__:null,default:j$,opts:k$},Symbol.toStringTag,{value:"Module"})),A$={name:"结尾",nexts:[]};function R$(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"/videos/end.mp4",playing:!0,children:[{key:"end",position:{bottom:50,left:768},component:y.jsx(me,{label:["Return home","回到首页"],onCallback:()=>e.pushAndStore("preview",void 0,{})})}]}})}const M$=Object.freeze(Object.defineProperty({__proto__:null,default:R$,opts:A$},Symbol.toStringTag,{value:"Module"}))
 ;
 const N$={name:"AR非遗扎染",nexts:["p2"]};
 function F$(){return y.jsx(GameIntro,{})}
