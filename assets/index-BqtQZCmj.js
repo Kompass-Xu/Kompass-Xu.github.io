@@ -1,3 +1,4 @@
+import { playGameSound } from "./game-sound.js?v=1";
 var wS=Object.defineProperty;var jp=e=>{throw TypeError(e)};var bS=(e,t,n)=>t in e?wS(e,t,{enumerable:!0,configurable:!0,writable:!0,value:n}):e[t]=n;var Kn=(e,t,n)=>bS(e,typeof t!="symbol"?t+"":t,n),Op=(e,t,n)=>t.has(e)||jp("Cannot "+n);var Sr=(e,t,n)=>(Op(e,t,"read from private field"),n?n.call(e):t.get(e)),El=(e,t,n)=>t.has(e)?jp("Cannot add the same private member more than once"):t instanceof WeakSet?t.add(e):t.set(e,n),Cl=(e,t,n,r)=>(Op(e,t,"write to private field"),r?r.call(e,n):t.set(e,n),n);function SS(e,t){for(var n=0;n<t.length;n++){const r=t[n];if(typeof r!="string"&&!Array.isArray(r)){for(const o in r)if(o!=="default"&&!(o in e)){const i=Object.getOwnPropertyDescriptor(r,o);i&&Object.defineProperty(e,o,i.get?i:{enumerable:!0,get:()=>r[o]})}}}return Object.freeze(Object.defineProperty(e,Symbol.toStringTag,{value:"Module"}))}(function(){const t=document.createElement("link").relList;if(t&&t.supports&&t.supports("modulepreload"))return;for(const o of document.querySelectorAll('link[rel="modulepreload"]'))r(o);new MutationObserver(o=>{for(const i of o)if(i.type==="childList")for(const s of i.addedNodes)s.tagName==="LINK"&&s.rel==="modulepreload"&&r(s)}).observe(document,{childList:!0,subtree:!0});function n(o){const i={};return o.integrity&&(i.integrity=o.integrity),o.referrerPolicy&&(i.referrerPolicy=o.referrerPolicy),o.crossOrigin==="use-credentials"?i.credentials="include":o.crossOrigin==="anonymous"?i.credentials="omit":i.credentials="same-origin",i}function r(o){if(o.ep)return;o.ep=!0;const i=n(o);fetch(o.href,i)}})();var Tl=typeof globalThis<"u"?globalThis:typeof window<"u"?window:typeof global<"u"?global:typeof self<"u"?self:{};function Na(e){return e&&e.__esModule&&Object.prototype.hasOwnProperty.call(e,"default")?e.default:e}function PS(e){if(e.__esModule)return e;var t=e.default;if(typeof t=="function"){var n=function r(){return this instanceof r?Reflect.construct(t,arguments,this.constructor):t.apply(this,arguments)};n.prototype=t.prototype}else n={};return Object.defineProperty(n,"__esModule",{value:!0}),Object.keys(e).forEach(function(r){var o=Object.getOwnPropertyDescriptor(e,r);Object.defineProperty(n,r,o.get?o:{enumerable:!0,get:function(){return e[r]}})}),n}var uy={exports:{}},La={},cy={exports:{}},z={};/**
  * @license React
  * react.production.min.js
@@ -115,7 +116,7 @@ function I({ bespoke, video }) {
 
 function GameVideo({ bespoke, video, retry }) {
   const { menuOpen, setMenuOpen } = UL();
-  const { save, toggleSound, markEnding } = m.useContext(gameSession);
+  const { save, toggleSound, markEnding, playEffect } = m.useContext(gameSession);
   const node = m.useRef(null);
   const [measure, size] = QM();
   const [playing, setPlaying] = m.useState(video.playing !== false);
@@ -177,6 +178,7 @@ function GameVideo({ bespoke, video, retry }) {
   b1("space", event => {
     if (menuOpen || event.defaultPrevented || event.target.closest?.("button, input, select, textarea, a, [role=button], [role=slider]")) return;
     event.preventDefault();
+    playEffect("wood");
     playOrPause();
   });
 
@@ -209,7 +211,7 @@ function GameVideo({ bespoke, video, retry }) {
               y.jsx("video", {
                 ref: node,
                 src: video.url, muted: save.muted, playsInline: true, preload: "auto",
-                "aria-label": gameSceneTitle(bespoke.current),
+                "aria-label": gameLabel(...gameSceneTitle(bespoke.current)),
                 onLoadedMetadata: event => setDuration(event.currentTarget.duration),
                 onTimeUpdate: event => setTime(event.currentTarget.currentTime),
                 onPlaying: () => setStatus("ready"),
@@ -225,21 +227,22 @@ function GameVideo({ bespoke, video, retry }) {
               showRecovery && y.jsxs("div", {
                 className: "game-player__feedback",
                 children: [
-                  y.jsx("p", {
+                  stalled ? y.jsx(GameLoader, {
+                    words: slow ? ["The video is taking a while.", "视频加载较慢，可以重试。"] :
+                      status === "buffering" ? ["Buffering…", "正在缓冲…"] : ["Loading scene…", "正在加载剧情…"]
+                  }) : y.jsx("p", {
                     role: "status",
-                    children: status === "error" ? "这段视频暂时无法播放。" :
-                      status === "blocked" ? "点一下播放剧情。" :
-                      slow ? "视频加载较慢，可以重试。" :
-                      status === "buffering" ? "正在缓冲…" : "正在加载剧情…"
+                    children: status === "error" ? gameWords("This video could not play.", "这段视频暂时无法播放。") :
+                      gameWords("Tap to play the scene.", "点一下播放剧情。")
                   }),
                   status === "blocked" && y.jsx("button", {
-                    type: "button", className: "game-button game-button--primary", onClick: playOrPause, children: "播放视频"
+                    type: "button", className: "game-button game-button--primary", onClick: playOrPause, children: gameWords("Play video", "播放视频")
                   }),
                   (status === "error" || slow) && y.jsxs("div", {
                     className: "game-player__recovery",
                     children: [
-                      y.jsx("button", { type: "button", className: "game-button game-button--primary", onClick: retry, children: "重试" }),
-                      y.jsx("button", { type: "button", className: "game-button", onClick: () => setMenuOpen(true), children: "打开章节目录" })
+                      y.jsx("button", { type: "button", className: "game-button game-button--primary", onClick: retry, children: gameWords("Try again", "重试") }),
+                      y.jsx("button", { type: "button", className: "game-button", onClick: () => setMenuOpen(true), children: gameWords("Open chapters", "打开章节目录") })
                     ]
                   })
                 ]
@@ -249,7 +252,7 @@ function GameVideo({ bespoke, video, retry }) {
           compact && !menuOpen && actions.length > 0 && y.jsx("div", {
             className: "game-player__actions",
             role: "group",
-            "aria-label": "当前剧情操作",
+            "aria-label": gameLabel("Scene actions", "当前剧情操作"),
             children: actions.map(({ key, component }) => y.jsx("div", { children: renderAction(component) }, key))
           })
         ]
@@ -257,26 +260,26 @@ function GameVideo({ bespoke, video, retry }) {
       y.jsxs("div", {
         className: "game-player__controls",
         role: "group",
-        "aria-label": "播放控制",
+        "aria-label": gameLabel("Playback controls", "播放控制"),
         children: [
           y.jsx("button", {
             type: "button", className: "game-button",
             onClick: playOrPause, disabled: status === "error",
-            children: finished ? "重播" : playing && status !== "blocked" ? "暂停" : "播放"
+            children: finished ? gameWords("Replay", "重播") : playing && status !== "blocked" ? gameWords("Pause", "暂停") : gameWords("Play", "播放")
           }),
           y.jsx("button", {
             type: "button", className: "game-button",
             onClick: toggleSound,
-            children: save.muted ? "开声音" : "静音"
+            children: save.muted ? gameWords("Unmute", "开声音") : gameWords("Mute", "静音")
           }),
           y.jsx("progress", {
-            className: "game-player__progress", "aria-label": "视频播放进度", value: progress, max: 100
+            className: "game-player__progress", "aria-label": gameLabel("Video progress", "视频播放进度"), value: progress, max: 100
           }),
           y.jsx("button", {
             type: "button", className: "game-button game-player__speed",
-            "aria-label": `播放速度 ${rate} 倍`,
+            "aria-label": gameLabel(`Speed ${rate}×`, `播放速度 ${rate} 倍`),
             onClick: () => setRate(value => value >= 2 ? 1 : value + .5),
-            children: `${rate}×`
+            children: gameWords(`${rate}×`, "倍速")
           })
         ]
       })
@@ -284,26 +287,31 @@ function GameVideo({ bespoke, video, retry }) {
   });
 }
 
-function me({ onCallback, label = "继续剧情" }) {
+function me({ onCallback, label = ["Continue", "继续剧情"] }) {
   const { menuOpen } = UL();
+  const { playEffect } = m.useContext(gameSession);
   const latest = m.useRef(onCallback);
   latest.current = onCallback;
   m.useEffect(() => {
     if (menuOpen) return;
     const scroll = event => {
-      if (event.deltaY > 18 && !event.ctrlKey) latest.current?.();
+      if (event.deltaY > 18 && !event.ctrlKey) {
+        playEffect("cloth");
+        latest.current?.();
+      }
     };
     document.addEventListener("wheel", scroll, { passive: true });
     return () => document.removeEventListener("wheel", scroll);
-  }, [menuOpen]);
+  }, [menuOpen, playEffect]);
   return y.jsx("button", {
     className: "game-button game-button--primary game-continue",
+    "data-sound": "cloth",
     type: "button",
     onClick: onCallback,
-    children: label
+    children: gameWords(...label)
   });
 }
-function yN({holder:e}){return y.jsx("div",{className:"absolute p-2 border rounded shadow-lg right-4 bottom-4 bg-background",children:y.jsxs("div",{className:"relative space-y-2 overflow-hidden",onClick:t=>t.stopPropagation(),onWheel:t=>t.stopPropagation(),children:[y.jsx("span",{className:"absolute w-32 px-1 text-xs text-center text-white scale-75 rotate-45 translate-x-1/2 bg-orange-600 top-2 right-4",children:"DEBUG"}),y.jsxs("div",{className:"text-sm",children:[y.jsx("span",{className:"font-semibold",children:"幻灯片:"}),y.jsx("mark",{className:"p-1 ml-2 rounded",children:e.current})]}),y.jsxs("div",{className:"text-sm",children:[y.jsx("h2",{className:"font-semibold",children:"配置:"}),y.jsx("div",{className:"p-2 overflow-auto rounded w-72 bg-muted max-h-96",children:y.jsx("pre",{className:"whitespace-pre-wrap",children:JSON.stringify(e.active.opts,null,2)})})]}),y.jsxs("div",{className:"text-sm",children:[y.jsx("h2",{className:"font-semibold",children:"数据:"}),y.jsx("div",{className:"p-2 overflow-auto rounded w-72 bg-muted max-h-96",children:y.jsx("pre",{className:"whitespace-pre-wrap",children:JSON.stringify(e.active.chooses,null,2)})})]}),y.jsxs("div",{className:"flex items-center gap-2",children:[y.jsx(kt,{size:"sm",disabled:e.stack.length<2,onClick:()=>e.pre(),children:"上一个"}),y.jsx(kt,{size:"sm",disabled:bn(e.active.opts.nexts),onClick:()=>e.next(),children:"下一个"})]})]})})}function Cg(){return y.jsx("div",{className:"flex items-center justify-center h-full",children:y.jsx("span",{children:"loading"})})}function Rn(e,t,{checkForDefaultPrevented:n=!0}={}){return function(o){if(e==null||e(o),n===!1||!o.defaultPrevented)return t==null?void 0:t(o)}}function vN(e,t){const n=m.createContext(t),r=i=>{const{children:s,...a}=i,l=m.useMemo(()=>a,Object.values(a));return y.jsx(n.Provider,{value:l,children:s})};r.displayName=e+"Provider";function o(i){const s=m.useContext(n);if(s)return s;if(t!==void 0)return t;throw new Error(`\`${i}\` must be used within \`${e}\``)}return[r,o]}function ep(e,t=[]){let n=[];function r(i,s){const a=m.createContext(s),l=n.length;n=[...n,s];const u=f=>{var h;const{scope:d,children:p,...w}=f,v=((h=d==null?void 0:d[e])==null?void 0:h[l])||a,b=m.useMemo(()=>w,Object.values(w));return y.jsx(v.Provider,{value:b,children:p})};u.displayName=i+"Provider";function c(f,d){var v;const p=((v=d==null?void 0:d[e])==null?void 0:v[l])||a,w=m.useContext(p);if(w)return w;if(s!==void 0)return s;throw new Error(`\`${f}\` must be used within \`${i}\``)}return[u,c]}const o=()=>{const i=n.map(s=>m.createContext(s));return function(a){const l=(a==null?void 0:a[e])||i;return m.useMemo(()=>({[`__scope${e}`]:{...a,[e]:l}}),[a,l])}};return o.scopeName=e,[r,xN(o,...t)]}function xN(...e){const t=e[0];if(e.length===1)return t;const n=()=>{const r=e.map(o=>({useScope:o(),scopeName:o.scopeName}));return function(i){const s=r.reduce((a,{useScope:l,scopeName:u})=>{const f=l(i)[`__scope${u}`];return{...a,...f}},{});return m.useMemo(()=>({[`__scope${t.scopeName}`]:s}),[s])}};return n.scopeName=t.scopeName,n}var rn=globalThis!=null&&globalThis.document?m.useLayoutEffect:()=>{},wN=FS.useId||(()=>{}),bN=0;function Us(e){const[t,n]=m.useState(wN());return rn(()=>{e||n(r=>r??String(bN++))},[e]),e||(t?`radix-${t}`:"")}function Nt(e){const t=m.useRef(e);return m.useEffect(()=>{t.current=e}),m.useMemo(()=>(...n)=>{var r;return(r=t.current)==null?void 0:r.call(t,...n)},[])}function S1({prop:e,defaultProp:t,onChange:n=()=>{}}){const[r,o]=SN({defaultProp:t,onChange:n}),i=e!==void 0,s=i?e:r,a=Nt(n),l=m.useCallback(u=>{if(i){const f=typeof u=="function"?u(e):u;f!==e&&a(f)}else o(u)},[i,e,o,a]);return[s,l]}function SN({defaultProp:e,onChange:t}){const n=m.useState(e),[r]=n,o=m.useRef(r),i=Nt(t);return m.useEffect(()=>{o.current!==r&&(i(r),o.current=r)},[r,o,i]),n}var PN=["a","button","div","form","h2","h3","img","input","label","li","nav","ol","p","span","svg","ul"],ln=PN.reduce((e,t)=>{const n=m.forwardRef((r,o)=>{const{asChild:i,...s}=r,a=i?qa:t;return typeof window<"u"&&(window[Symbol.for("radix-ui")]=!0),y.jsx(a,{...s,ref:o})});return n.displayName=`Primitive.${t}`,{...e,[t]:n}},{});function _N(e,t){e&&Bi.flushSync(()=>e.dispatchEvent(t))}function P1(e,t=globalThis==null?void 0:globalThis.document){const n=Nt(e);m.useEffect(()=>{const r=o=>{o.key==="Escape"&&n(o)};return t.addEventListener("keydown",r,{capture:!0}),()=>t.removeEventListener("keydown",r,{capture:!0})},[n,t])}var EN="DismissableLayer",nf="dismissableLayer.update",CN="dismissableLayer.pointerDownOutside",TN="dismissableLayer.focusOutside",Tg,_1=m.createContext({layers:new Set,layersWithOutsidePointerEventsDisabled:new Set,branches:new Set}),E1=m.forwardRef((e,t)=>{const{disableOutsidePointerEvents:n=!1,onEscapeKeyDown:r,onPointerDownOutside:o,onFocusOutside:i,onInteractOutside:s,onDismiss:a,...l}=e,u=m.useContext(_1),[c,f]=m.useState(null),d=(c==null?void 0:c.ownerDocument)??(globalThis==null?void 0:globalThis.document),[,p]=m.useState({}),w=yr(t,E=>f(E)),v=Array.from(u.layers),[b]=[...u.layersWithOutsidePointerEventsDisabled].slice(-1),h=v.indexOf(b),g=c?v.indexOf(c):-1,x=u.layersWithOutsidePointerEventsDisabled.size>0,S=g>=h,P=ON(E=>{const C=E.target,O=[...u.branches].some(j=>j.contains(C));!S||O||(o==null||o(E),s==null||s(E),E.defaultPrevented||a==null||a())},d),_=AN(E=>{const C=E.target;[...u.branches].some(j=>j.contains(C))||(i==null||i(E),s==null||s(E),E.defaultPrevented||a==null||a())},d);return P1(E=>{g===u.layers.size-1&&(r==null||r(E),!E.defaultPrevented&&a&&(E.preventDefault(),a()))},d),m.useEffect(()=>{if(c)return n&&(u.layersWithOutsidePointerEventsDisabled.size===0&&(Tg=d.body.style.pointerEvents,d.body.style.pointerEvents="none"),u.layersWithOutsidePointerEventsDisabled.add(c)),u.layers.add(c),kg(),()=>{n&&u.layersWithOutsidePointerEventsDisabled.size===1&&(d.body.style.pointerEvents=Tg)}},[c,d,n,u]),m.useEffect(()=>()=>{c&&(u.layers.delete(c),u.layersWithOutsidePointerEventsDisabled.delete(c),kg())},[c,u]),m.useEffect(()=>{const E=()=>p({});return document.addEventListener(nf,E),()=>document.removeEventListener(nf,E)},[]),y.jsx(ln.div,{...l,ref:w,style:{pointerEvents:x?S?"auto":"none":void 0,...e.style},onFocusCapture:Rn(e.onFocusCapture,_.onFocusCapture),onBlurCapture:Rn(e.onBlurCapture,_.onBlurCapture),onPointerDownCapture:Rn(e.onPointerDownCapture,P.onPointerDownCapture)})});E1.displayName=EN;var kN="DismissableLayerBranch",jN=m.forwardRef((e,t)=>{const n=m.useContext(_1),r=m.useRef(null),o=yr(t,r);return m.useEffect(()=>{const i=r.current;if(i)return n.branches.add(i),()=>{n.branches.delete(i)}},[n.branches]),y.jsx(ln.div,{...e,ref:o})});jN.displayName=kN;function ON(e,t=globalThis==null?void 0:globalThis.document){const n=Nt(e),r=m.useRef(!1),o=m.useRef(()=>{});return m.useEffect(()=>{const i=a=>{if(a.target&&!r.current){let l=function(){C1(CN,n,u,{discrete:!0})};const u={originalEvent:a};a.pointerType==="touch"?(t.removeEventListener("click",o.current),o.current=l,t.addEventListener("click",o.current,{once:!0})):l()}else t.removeEventListener("click",o.current);r.current=!1},s=window.setTimeout(()=>{t.addEventListener("pointerdown",i)},0);return()=>{window.clearTimeout(s),t.removeEventListener("pointerdown",i),t.removeEventListener("click",o.current)}},[t,n]),{onPointerDownCapture:()=>r.current=!0}}function AN(e,t=globalThis==null?void 0:globalThis.document){const n=Nt(e),r=m.useRef(!1);return m.useEffect(()=>{const o=i=>{i.target&&!r.current&&C1(TN,n,{originalEvent:i},{discrete:!1})};return t.addEventListener("focusin",o),()=>t.removeEventListener("focusin",o)},[t,n]),{onFocusCapture:()=>r.current=!0,onBlurCapture:()=>r.current=!1}}function kg(){const e=new CustomEvent(nf);document.dispatchEvent(e)}function C1(e,t,n,{discrete:r}){const o=n.originalEvent.target,i=new CustomEvent(e,{bubbles:!1,cancelable:!0,detail:n});t&&o.addEventListener(e,t,{once:!0}),r?_N(o,i):o.dispatchEvent(i)}var bu="focusScope.autoFocusOnMount",Su="focusScope.autoFocusOnUnmount",jg={bubbles:!1,cancelable:!0},RN="FocusScope",T1=m.forwardRef((e,t)=>{const{loop:n=!1,trapped:r=!1,onMountAutoFocus:o,onUnmountAutoFocus:i,...s}=e,[a,l]=m.useState(null),u=Nt(o),c=Nt(i),f=m.useRef(null),d=yr(t,v=>l(v)),p=m.useRef({paused:!1,pause(){this.paused=!0},resume(){this.paused=!1}}).current;m.useEffect(()=>{if(r){let v=function(x){if(p.paused||!a)return;const S=x.target;a.contains(S)?f.current=S:pn(f.current,{select:!0})},b=function(x){if(p.paused||!a)return;const S=x.relatedTarget;S!==null&&(a.contains(S)||pn(f.current,{select:!0}))},h=function(x){if(document.activeElement===document.body)for(const P of x)P.removedNodes.length>0&&pn(a)};document.addEventListener("focusin",v),document.addEventListener("focusout",b);const g=new MutationObserver(h);return a&&g.observe(a,{childList:!0,subtree:!0}),()=>{document.removeEventListener("focusin",v),document.removeEventListener("focusout",b),g.disconnect()}}},[r,a,p.paused]),m.useEffect(()=>{if(a){Ag.add(p);const v=document.activeElement;if(!a.contains(v)){const h=new CustomEvent(bu,jg);a.addEventListener(bu,u),a.dispatchEvent(h),h.defaultPrevented||(MN(VN(k1(a)),{select:!0}),document.activeElement===v&&pn(a))}return()=>{a.removeEventListener(bu,u),setTimeout(()=>{const h=new CustomEvent(Su,jg);a.addEventListener(Su,c),a.dispatchEvent(h),h.defaultPrevented||pn(v??document.body,{select:!0}),a.removeEventListener(Su,c),Ag.remove(p)},0)}}},[a,u,c,p]);const w=m.useCallback(v=>{if(!n&&!r||p.paused)return;const b=v.key==="Tab"&&!v.altKey&&!v.ctrlKey&&!v.metaKey,h=document.activeElement;if(b&&h){const g=v.currentTarget,[x,S]=NN(g);x&&S?!v.shiftKey&&h===S?(v.preventDefault(),n&&pn(x,{select:!0})):v.shiftKey&&h===x&&(v.preventDefault(),n&&pn(S,{select:!0})):h===g&&v.preventDefault()}},[n,r,p.paused]);return y.jsx(ln.div,{tabIndex:-1,...s,ref:d,onKeyDown:w})});T1.displayName=RN;function MN(e,{select:t=!1}={}){const n=document.activeElement;for(const r of e)if(pn(r,{select:t}),document.activeElement!==n)return}function NN(e){const t=k1(e),n=Og(t,e),r=Og(t.reverse(),e);return[n,r]}function k1(e){const t=[],n=document.createTreeWalker(e,NodeFilter.SHOW_ELEMENT,{acceptNode:r=>{const o=r.tagName==="INPUT"&&r.type==="hidden";return r.disabled||r.hidden||o?NodeFilter.FILTER_SKIP:r.tabIndex>=0?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_SKIP}});for(;n.nextNode();)t.push(n.currentNode);return t}function Og(e,t){for(const n of e)if(!LN(n,{upTo:t}))return n}function LN(e,{upTo:t}){if(getComputedStyle(e).visibility==="hidden")return!0;for(;e;){if(t!==void 0&&e===t)return!1;if(getComputedStyle(e).display==="none")return!0;e=e.parentElement}return!1}function DN(e){return e instanceof HTMLInputElement&&"select"in e}function pn(e,{select:t=!1}={}){if(e&&e.focus){const n=document.activeElement;e.focus({preventScroll:!0}),e!==n&&DN(e)&&t&&e.select()}}var Ag=IN();function IN(){let e=[];return{add(t){const n=e[0];t!==n&&(n==null||n.pause()),e=Rg(e,t),e.unshift(t)},remove(t){var n;e=Rg(e,t),(n=e[0])==null||n.resume()}}}function Rg(e,t){const n=[...e],r=n.indexOf(t);return r!==-1&&n.splice(r,1),n}function VN(e){return e.filter(t=>t.tagName!=="A")}var $N="Portal",j1=m.forwardRef((e,t)=>{var a;const{container:n,...r}=e,[o,i]=m.useState(!1);rn(()=>i(!0),[]);const s=n||o&&((a=globalThis==null?void 0:globalThis.document)==null?void 0:a.body);return s?Z_.createPortal(y.jsx(ln.div,{...r,ref:t}),s):null});j1.displayName=$N;function FN(e,t){return m.useReducer((n,r)=>t[n][r]??n,e)}var cl=e=>{const{present:t,children:n}=e,r=zN(t),o=typeof n=="function"?n({present:r.isPresent}):m.Children.only(n),i=yr(r.ref,BN(o));return typeof n=="function"||r.isPresent?m.cloneElement(o,{ref:i}):null};cl.displayName="Presence";function zN(e){const[t,n]=m.useState(),r=m.useRef({}),o=m.useRef(e),i=m.useRef("none"),s=e?"mounted":"unmounted",[a,l]=FN(s,{mounted:{UNMOUNT:"unmounted",ANIMATION_OUT:"unmountSuspended"},unmountSuspended:{MOUNT:"mounted",ANIMATION_END:"unmounted"},unmounted:{MOUNT:"mounted"}});return m.useEffect(()=>{const u=xs(r.current);i.current=a==="mounted"?u:"none"},[a]),rn(()=>{const u=r.current,c=o.current;if(c!==e){const d=i.current,p=xs(u);e?l("MOUNT"):p==="none"||(u==null?void 0:u.display)==="none"?l("UNMOUNT"):l(c&&d!==p?"ANIMATION_OUT":"UNMOUNT"),o.current=e}},[e,l]),rn(()=>{if(t){let u;const c=t.ownerDocument.defaultView??window,f=p=>{const v=xs(r.current).includes(p.animationName);if(p.target===t&&v&&(l("ANIMATION_END"),!o.current)){const b=t.style.animationFillMode;t.style.animationFillMode="forwards",u=c.setTimeout(()=>{t.style.animationFillMode==="forwards"&&(t.style.animationFillMode=b)})}},d=p=>{p.target===t&&(i.current=xs(r.current))};return t.addEventListener("animationstart",d),t.addEventListener("animationcancel",f),t.addEventListener("animationend",f),()=>{c.clearTimeout(u),t.removeEventListener("animationstart",d),t.removeEventListener("animationcancel",f),t.removeEventListener("animationend",f)}}else l("ANIMATION_END")},[t,l]),{isPresent:["mounted","unmountSuspended"].includes(a),ref:m.useCallback(u=>{u&&(r.current=getComputedStyle(u)),n(u)},[])}}function xs(e){return(e==null?void 0:e.animationName)||"none"}function BN(e){var r,o;let t=(r=Object.getOwnPropertyDescriptor(e.props,"ref"))==null?void 0:r.get,n=t&&"isReactWarning"in t&&t.isReactWarning;return n?e.ref:(t=(o=Object.getOwnPropertyDescriptor(e,"ref"))==null?void 0:o.get,n=t&&"isReactWarning"in t&&t.isReactWarning,n?e.props.ref:e.props.ref||e.ref)}var Pu=0;function UN(){m.useEffect(()=>{const e=document.querySelectorAll("[data-radix-focus-guard]");return document.body.insertAdjacentElement("afterbegin",e[0]??Mg()),document.body.insertAdjacentElement("beforeend",e[1]??Mg()),Pu++,()=>{Pu===1&&document.querySelectorAll("[data-radix-focus-guard]").forEach(t=>t.remove()),Pu--}},[])}function Mg(){const e=document.createElement("span");return e.setAttribute("data-radix-focus-guard",""),e.tabIndex=0,e.style.outline="none",e.style.opacity="0",e.style.position="fixed",e.style.pointerEvents="none",e}var Ws="right-scroll-bar-position",Hs="width-before-scroll-bar",WN="with-scroll-bars-hidden",HN="--removed-body-scroll-bar-size";function _u(e,t){return typeof e=="function"?e(t):e&&(e.current=t),e}function KN(e,t){var n=m.useState(function(){return{value:e,callback:t,facade:{get current(){return n.value},set current(r){var o=n.value;o!==r&&(n.value=r,n.callback(r,o))}}}})[0];return n.callback=t,n.facade}var GN=typeof window<"u"?m.useLayoutEffect:m.useEffect,Ng=new WeakMap;function YN(e,t){var n=KN(null,function(r){return e.forEach(function(o){return _u(o,r)})});return GN(function(){var r=Ng.get(n);if(r){var o=new Set(r),i=new Set(e),s=n.current;o.forEach(function(a){i.has(a)||_u(a,null)}),i.forEach(function(a){o.has(a)||_u(a,s)})}Ng.set(n,e)},[e]),n}function XN(e){return e}function QN(e,t){t===void 0&&(t=XN);var n=[],r=!1,o={read:function(){if(r)throw new Error("Sidecar: could not `read` from an `assigned` medium. `read` could be used only with `useMedium`.");return n.length?n[n.length-1]:e},useMedium:function(i){var s=t(i,r);return n.push(s),function(){n=n.filter(function(a){return a!==s})}},assignSyncMedium:function(i){for(r=!0;n.length;){var s=n;n=[],s.forEach(i)}n={push:function(a){return i(a)},filter:function(){return n}}},assignMedium:function(i){r=!0;var s=[];if(n.length){var a=n;n=[],a.forEach(i),s=n}var l=function(){var c=s;s=[],c.forEach(i)},u=function(){return Promise.resolve().then(l)};u(),n={push:function(c){s.push(c),u()},filter:function(c){return s=s.filter(c),n}}}};return o}function ZN(e){e===void 0&&(e={});var t=QN(null);return t.options=qe({async:!0,ssr:!1},e),t}var O1=function(e){var t=e.sideCar,n=f1(e,["sideCar"]);if(!t)throw new Error("Sidecar: please provide `sideCar` property to import the right car");var r=t.read();if(!r)throw new Error("Sidecar medium not found");return m.createElement(r,qe({},n))};O1.isSideCarExport=!0;function qN(e,t){return e.useMedium(t),O1}var A1=ZN(),Eu=function(){},fl=m.forwardRef(function(e,t){var n=m.useRef(null),r=m.useState({onScrollCapture:Eu,onWheelCapture:Eu,onTouchMoveCapture:Eu}),o=r[0],i=r[1],s=e.forwardProps,a=e.children,l=e.className,u=e.removeScrollBar,c=e.enabled,f=e.shards,d=e.sideCar,p=e.noIsolation,w=e.inert,v=e.allowPinchZoom,b=e.as,h=b===void 0?"div":b,g=e.gapMode,x=f1(e,["forwardProps","children","className","removeScrollBar","enabled","shards","sideCar","noIsolation","inert","allowPinchZoom","as","gapMode"]),S=d,P=YN([n,t]),_=qe(qe({},x),o);return m.createElement(m.Fragment,null,c&&m.createElement(S,{sideCar:A1,removeScrollBar:u,shards:f,noIsolation:p,inert:w,setCallbacks:i,allowPinchZoom:!!v,lockRef:n,gapMode:g}),s?m.cloneElement(m.Children.only(a),qe(qe({},_),{ref:P})):m.createElement(h,qe({},_,{className:l,ref:P}),a))});fl.defaultProps={enabled:!0,removeScrollBar:!0,inert:!1};fl.classNames={fullWidth:Hs,zeroRight:Ws};var JN=function(){if(typeof __webpack_nonce__<"u")return __webpack_nonce__};function eL(){if(!document)return null;var e=document.createElement("style");e.type="text/css";var t=JN();return t&&e.setAttribute("nonce",t),e}function tL(e,t){e.styleSheet?e.styleSheet.cssText=t:e.appendChild(document.createTextNode(t))}function nL(e){var t=document.head||document.getElementsByTagName("head")[0];t.appendChild(e)}var rL=function(){var e=0,t=null;return{add:function(n){e==0&&(t=eL())&&(tL(t,n),nL(t)),e++},remove:function(){e--,!e&&t&&(t.parentNode&&t.parentNode.removeChild(t),t=null)}}},oL=function(){var e=rL();return function(t,n){m.useEffect(function(){return e.add(t),function(){e.remove()}},[t&&n])}},R1=function(){var e=oL(),t=function(n){var r=n.styles,o=n.dynamic;return e(r,o),null};return t},iL={left:0,top:0,right:0,gap:0},Cu=function(e){return parseInt(e||"",10)||0},sL=function(e){var t=window.getComputedStyle(document.body),n=t[e==="padding"?"paddingLeft":"marginLeft"],r=t[e==="padding"?"paddingTop":"marginTop"],o=t[e==="padding"?"paddingRight":"marginRight"];return[Cu(n),Cu(r),Cu(o)]},aL=function(e){if(e===void 0&&(e="margin"),typeof window>"u")return iL;var t=sL(e),n=document.documentElement.clientWidth,r=window.innerWidth;return{left:t[0],top:t[1],right:t[2],gap:Math.max(0,r-n+t[2]-t[0])}},lL=R1(),eo="data-scroll-locked",uL=function(e,t,n,r){var o=e.left,i=e.top,s=e.right,a=e.gap;return n===void 0&&(n="margin"),`
+function yN({holder:e}){return y.jsx("div",{className:"absolute p-2 border rounded shadow-lg right-4 bottom-4 bg-background",children:y.jsxs("div",{className:"relative space-y-2 overflow-hidden",onClick:t=>t.stopPropagation(),onWheel:t=>t.stopPropagation(),children:[y.jsx("span",{className:"absolute w-32 px-1 text-xs text-center text-white scale-75 rotate-45 translate-x-1/2 bg-orange-600 top-2 right-4",children:"DEBUG"}),y.jsxs("div",{className:"text-sm",children:[y.jsx("span",{className:"font-semibold",children:"幻灯片:"}),y.jsx("mark",{className:"p-1 ml-2 rounded",children:e.current})]}),y.jsxs("div",{className:"text-sm",children:[y.jsx("h2",{className:"font-semibold",children:"配置:"}),y.jsx("div",{className:"p-2 overflow-auto rounded w-72 bg-muted max-h-96",children:y.jsx("pre",{className:"whitespace-pre-wrap",children:JSON.stringify(e.active.opts,null,2)})})]}),y.jsxs("div",{className:"text-sm",children:[y.jsx("h2",{className:"font-semibold",children:"数据:"}),y.jsx("div",{className:"p-2 overflow-auto rounded w-72 bg-muted max-h-96",children:y.jsx("pre",{className:"whitespace-pre-wrap",children:JSON.stringify(e.active.chooses,null,2)})})]}),y.jsxs("div",{className:"flex items-center gap-2",children:[y.jsx(kt,{size:"sm",disabled:e.stack.length<2,onClick:()=>e.pre(),children:"上一个"}),y.jsx(kt,{size:"sm",disabled:bn(e.active.opts.nexts),onClick:()=>e.next(),children:"下一个"})]})]})})}function Cg(){return y.jsx(GameLoader,{boot:true})}function Rn(e,t,{checkForDefaultPrevented:n=!0}={}){return function(o){if(e==null||e(o),n===!1||!o.defaultPrevented)return t==null?void 0:t(o)}}function vN(e,t){const n=m.createContext(t),r=i=>{const{children:s,...a}=i,l=m.useMemo(()=>a,Object.values(a));return y.jsx(n.Provider,{value:l,children:s})};r.displayName=e+"Provider";function o(i){const s=m.useContext(n);if(s)return s;if(t!==void 0)return t;throw new Error(`\`${i}\` must be used within \`${e}\``)}return[r,o]}function ep(e,t=[]){let n=[];function r(i,s){const a=m.createContext(s),l=n.length;n=[...n,s];const u=f=>{var h;const{scope:d,children:p,...w}=f,v=((h=d==null?void 0:d[e])==null?void 0:h[l])||a,b=m.useMemo(()=>w,Object.values(w));return y.jsx(v.Provider,{value:b,children:p})};u.displayName=i+"Provider";function c(f,d){var v;const p=((v=d==null?void 0:d[e])==null?void 0:v[l])||a,w=m.useContext(p);if(w)return w;if(s!==void 0)return s;throw new Error(`\`${f}\` must be used within \`${i}\``)}return[u,c]}const o=()=>{const i=n.map(s=>m.createContext(s));return function(a){const l=(a==null?void 0:a[e])||i;return m.useMemo(()=>({[`__scope${e}`]:{...a,[e]:l}}),[a,l])}};return o.scopeName=e,[r,xN(o,...t)]}function xN(...e){const t=e[0];if(e.length===1)return t;const n=()=>{const r=e.map(o=>({useScope:o(),scopeName:o.scopeName}));return function(i){const s=r.reduce((a,{useScope:l,scopeName:u})=>{const f=l(i)[`__scope${u}`];return{...a,...f}},{});return m.useMemo(()=>({[`__scope${t.scopeName}`]:s}),[s])}};return n.scopeName=t.scopeName,n}var rn=globalThis!=null&&globalThis.document?m.useLayoutEffect:()=>{},wN=FS.useId||(()=>{}),bN=0;function Us(e){const[t,n]=m.useState(wN());return rn(()=>{e||n(r=>r??String(bN++))},[e]),e||(t?`radix-${t}`:"")}function Nt(e){const t=m.useRef(e);return m.useEffect(()=>{t.current=e}),m.useMemo(()=>(...n)=>{var r;return(r=t.current)==null?void 0:r.call(t,...n)},[])}function S1({prop:e,defaultProp:t,onChange:n=()=>{}}){const[r,o]=SN({defaultProp:t,onChange:n}),i=e!==void 0,s=i?e:r,a=Nt(n),l=m.useCallback(u=>{if(i){const f=typeof u=="function"?u(e):u;f!==e&&a(f)}else o(u)},[i,e,o,a]);return[s,l]}function SN({defaultProp:e,onChange:t}){const n=m.useState(e),[r]=n,o=m.useRef(r),i=Nt(t);return m.useEffect(()=>{o.current!==r&&(i(r),o.current=r)},[r,o,i]),n}var PN=["a","button","div","form","h2","h3","img","input","label","li","nav","ol","p","span","svg","ul"],ln=PN.reduce((e,t)=>{const n=m.forwardRef((r,o)=>{const{asChild:i,...s}=r,a=i?qa:t;return typeof window<"u"&&(window[Symbol.for("radix-ui")]=!0),y.jsx(a,{...s,ref:o})});return n.displayName=`Primitive.${t}`,{...e,[t]:n}},{});function _N(e,t){e&&Bi.flushSync(()=>e.dispatchEvent(t))}function P1(e,t=globalThis==null?void 0:globalThis.document){const n=Nt(e);m.useEffect(()=>{const r=o=>{o.key==="Escape"&&n(o)};return t.addEventListener("keydown",r,{capture:!0}),()=>t.removeEventListener("keydown",r,{capture:!0})},[n,t])}var EN="DismissableLayer",nf="dismissableLayer.update",CN="dismissableLayer.pointerDownOutside",TN="dismissableLayer.focusOutside",Tg,_1=m.createContext({layers:new Set,layersWithOutsidePointerEventsDisabled:new Set,branches:new Set}),E1=m.forwardRef((e,t)=>{const{disableOutsidePointerEvents:n=!1,onEscapeKeyDown:r,onPointerDownOutside:o,onFocusOutside:i,onInteractOutside:s,onDismiss:a,...l}=e,u=m.useContext(_1),[c,f]=m.useState(null),d=(c==null?void 0:c.ownerDocument)??(globalThis==null?void 0:globalThis.document),[,p]=m.useState({}),w=yr(t,E=>f(E)),v=Array.from(u.layers),[b]=[...u.layersWithOutsidePointerEventsDisabled].slice(-1),h=v.indexOf(b),g=c?v.indexOf(c):-1,x=u.layersWithOutsidePointerEventsDisabled.size>0,S=g>=h,P=ON(E=>{const C=E.target,O=[...u.branches].some(j=>j.contains(C));!S||O||(o==null||o(E),s==null||s(E),E.defaultPrevented||a==null||a())},d),_=AN(E=>{const C=E.target;[...u.branches].some(j=>j.contains(C))||(i==null||i(E),s==null||s(E),E.defaultPrevented||a==null||a())},d);return P1(E=>{g===u.layers.size-1&&(r==null||r(E),!E.defaultPrevented&&a&&(E.preventDefault(),a()))},d),m.useEffect(()=>{if(c)return n&&(u.layersWithOutsidePointerEventsDisabled.size===0&&(Tg=d.body.style.pointerEvents,d.body.style.pointerEvents="none"),u.layersWithOutsidePointerEventsDisabled.add(c)),u.layers.add(c),kg(),()=>{n&&u.layersWithOutsidePointerEventsDisabled.size===1&&(d.body.style.pointerEvents=Tg)}},[c,d,n,u]),m.useEffect(()=>()=>{c&&(u.layers.delete(c),u.layersWithOutsidePointerEventsDisabled.delete(c),kg())},[c,u]),m.useEffect(()=>{const E=()=>p({});return document.addEventListener(nf,E),()=>document.removeEventListener(nf,E)},[]),y.jsx(ln.div,{...l,ref:w,style:{pointerEvents:x?S?"auto":"none":void 0,...e.style},onFocusCapture:Rn(e.onFocusCapture,_.onFocusCapture),onBlurCapture:Rn(e.onBlurCapture,_.onBlurCapture),onPointerDownCapture:Rn(e.onPointerDownCapture,P.onPointerDownCapture)})});E1.displayName=EN;var kN="DismissableLayerBranch",jN=m.forwardRef((e,t)=>{const n=m.useContext(_1),r=m.useRef(null),o=yr(t,r);return m.useEffect(()=>{const i=r.current;if(i)return n.branches.add(i),()=>{n.branches.delete(i)}},[n.branches]),y.jsx(ln.div,{...e,ref:o})});jN.displayName=kN;function ON(e,t=globalThis==null?void 0:globalThis.document){const n=Nt(e),r=m.useRef(!1),o=m.useRef(()=>{});return m.useEffect(()=>{const i=a=>{if(a.target&&!r.current){let l=function(){C1(CN,n,u,{discrete:!0})};const u={originalEvent:a};a.pointerType==="touch"?(t.removeEventListener("click",o.current),o.current=l,t.addEventListener("click",o.current,{once:!0})):l()}else t.removeEventListener("click",o.current);r.current=!1},s=window.setTimeout(()=>{t.addEventListener("pointerdown",i)},0);return()=>{window.clearTimeout(s),t.removeEventListener("pointerdown",i),t.removeEventListener("click",o.current)}},[t,n]),{onPointerDownCapture:()=>r.current=!0}}function AN(e,t=globalThis==null?void 0:globalThis.document){const n=Nt(e),r=m.useRef(!1);return m.useEffect(()=>{const o=i=>{i.target&&!r.current&&C1(TN,n,{originalEvent:i},{discrete:!1})};return t.addEventListener("focusin",o),()=>t.removeEventListener("focusin",o)},[t,n]),{onFocusCapture:()=>r.current=!0,onBlurCapture:()=>r.current=!1}}function kg(){const e=new CustomEvent(nf);document.dispatchEvent(e)}function C1(e,t,n,{discrete:r}){const o=n.originalEvent.target,i=new CustomEvent(e,{bubbles:!1,cancelable:!0,detail:n});t&&o.addEventListener(e,t,{once:!0}),r?_N(o,i):o.dispatchEvent(i)}var bu="focusScope.autoFocusOnMount",Su="focusScope.autoFocusOnUnmount",jg={bubbles:!1,cancelable:!0},RN="FocusScope",T1=m.forwardRef((e,t)=>{const{loop:n=!1,trapped:r=!1,onMountAutoFocus:o,onUnmountAutoFocus:i,...s}=e,[a,l]=m.useState(null),u=Nt(o),c=Nt(i),f=m.useRef(null),d=yr(t,v=>l(v)),p=m.useRef({paused:!1,pause(){this.paused=!0},resume(){this.paused=!1}}).current;m.useEffect(()=>{if(r){let v=function(x){if(p.paused||!a)return;const S=x.target;a.contains(S)?f.current=S:pn(f.current,{select:!0})},b=function(x){if(p.paused||!a)return;const S=x.relatedTarget;S!==null&&(a.contains(S)||pn(f.current,{select:!0}))},h=function(x){if(document.activeElement===document.body)for(const P of x)P.removedNodes.length>0&&pn(a)};document.addEventListener("focusin",v),document.addEventListener("focusout",b);const g=new MutationObserver(h);return a&&g.observe(a,{childList:!0,subtree:!0}),()=>{document.removeEventListener("focusin",v),document.removeEventListener("focusout",b),g.disconnect()}}},[r,a,p.paused]),m.useEffect(()=>{if(a){Ag.add(p);const v=document.activeElement;if(!a.contains(v)){const h=new CustomEvent(bu,jg);a.addEventListener(bu,u),a.dispatchEvent(h),h.defaultPrevented||(MN(VN(k1(a)),{select:!0}),document.activeElement===v&&pn(a))}return()=>{a.removeEventListener(bu,u),setTimeout(()=>{const h=new CustomEvent(Su,jg);a.addEventListener(Su,c),a.dispatchEvent(h),h.defaultPrevented||pn(v??document.body,{select:!0}),a.removeEventListener(Su,c),Ag.remove(p)},0)}}},[a,u,c,p]);const w=m.useCallback(v=>{if(!n&&!r||p.paused)return;const b=v.key==="Tab"&&!v.altKey&&!v.ctrlKey&&!v.metaKey,h=document.activeElement;if(b&&h){const g=v.currentTarget,[x,S]=NN(g);x&&S?!v.shiftKey&&h===S?(v.preventDefault(),n&&pn(x,{select:!0})):v.shiftKey&&h===x&&(v.preventDefault(),n&&pn(S,{select:!0})):h===g&&v.preventDefault()}},[n,r,p.paused]);return y.jsx(ln.div,{tabIndex:-1,...s,ref:d,onKeyDown:w})});T1.displayName=RN;function MN(e,{select:t=!1}={}){const n=document.activeElement;for(const r of e)if(pn(r,{select:t}),document.activeElement!==n)return}function NN(e){const t=k1(e),n=Og(t,e),r=Og(t.reverse(),e);return[n,r]}function k1(e){const t=[],n=document.createTreeWalker(e,NodeFilter.SHOW_ELEMENT,{acceptNode:r=>{const o=r.tagName==="INPUT"&&r.type==="hidden";return r.disabled||r.hidden||o?NodeFilter.FILTER_SKIP:r.tabIndex>=0?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_SKIP}});for(;n.nextNode();)t.push(n.currentNode);return t}function Og(e,t){for(const n of e)if(!LN(n,{upTo:t}))return n}function LN(e,{upTo:t}){if(getComputedStyle(e).visibility==="hidden")return!0;for(;e;){if(t!==void 0&&e===t)return!1;if(getComputedStyle(e).display==="none")return!0;e=e.parentElement}return!1}function DN(e){return e instanceof HTMLInputElement&&"select"in e}function pn(e,{select:t=!1}={}){if(e&&e.focus){const n=document.activeElement;e.focus({preventScroll:!0}),e!==n&&DN(e)&&t&&e.select()}}var Ag=IN();function IN(){let e=[];return{add(t){const n=e[0];t!==n&&(n==null||n.pause()),e=Rg(e,t),e.unshift(t)},remove(t){var n;e=Rg(e,t),(n=e[0])==null||n.resume()}}}function Rg(e,t){const n=[...e],r=n.indexOf(t);return r!==-1&&n.splice(r,1),n}function VN(e){return e.filter(t=>t.tagName!=="A")}var $N="Portal",j1=m.forwardRef((e,t)=>{var a;const{container:n,...r}=e,[o,i]=m.useState(!1);rn(()=>i(!0),[]);const s=n||o&&((a=globalThis==null?void 0:globalThis.document)==null?void 0:a.body);return s?Z_.createPortal(y.jsx(ln.div,{...r,ref:t}),s):null});j1.displayName=$N;function FN(e,t){return m.useReducer((n,r)=>t[n][r]??n,e)}var cl=e=>{const{present:t,children:n}=e,r=zN(t),o=typeof n=="function"?n({present:r.isPresent}):m.Children.only(n),i=yr(r.ref,BN(o));return typeof n=="function"||r.isPresent?m.cloneElement(o,{ref:i}):null};cl.displayName="Presence";function zN(e){const[t,n]=m.useState(),r=m.useRef({}),o=m.useRef(e),i=m.useRef("none"),s=e?"mounted":"unmounted",[a,l]=FN(s,{mounted:{UNMOUNT:"unmounted",ANIMATION_OUT:"unmountSuspended"},unmountSuspended:{MOUNT:"mounted",ANIMATION_END:"unmounted"},unmounted:{MOUNT:"mounted"}});return m.useEffect(()=>{const u=xs(r.current);i.current=a==="mounted"?u:"none"},[a]),rn(()=>{const u=r.current,c=o.current;if(c!==e){const d=i.current,p=xs(u);e?l("MOUNT"):p==="none"||(u==null?void 0:u.display)==="none"?l("UNMOUNT"):l(c&&d!==p?"ANIMATION_OUT":"UNMOUNT"),o.current=e}},[e,l]),rn(()=>{if(t){let u;const c=t.ownerDocument.defaultView??window,f=p=>{const v=xs(r.current).includes(p.animationName);if(p.target===t&&v&&(l("ANIMATION_END"),!o.current)){const b=t.style.animationFillMode;t.style.animationFillMode="forwards",u=c.setTimeout(()=>{t.style.animationFillMode==="forwards"&&(t.style.animationFillMode=b)})}},d=p=>{p.target===t&&(i.current=xs(r.current))};return t.addEventListener("animationstart",d),t.addEventListener("animationcancel",f),t.addEventListener("animationend",f),()=>{c.clearTimeout(u),t.removeEventListener("animationstart",d),t.removeEventListener("animationcancel",f),t.removeEventListener("animationend",f)}}else l("ANIMATION_END")},[t,l]),{isPresent:["mounted","unmountSuspended"].includes(a),ref:m.useCallback(u=>{u&&(r.current=getComputedStyle(u)),n(u)},[])}}function xs(e){return(e==null?void 0:e.animationName)||"none"}function BN(e){var r,o;let t=(r=Object.getOwnPropertyDescriptor(e.props,"ref"))==null?void 0:r.get,n=t&&"isReactWarning"in t&&t.isReactWarning;return n?e.ref:(t=(o=Object.getOwnPropertyDescriptor(e,"ref"))==null?void 0:o.get,n=t&&"isReactWarning"in t&&t.isReactWarning,n?e.props.ref:e.props.ref||e.ref)}var Pu=0;function UN(){m.useEffect(()=>{const e=document.querySelectorAll("[data-radix-focus-guard]");return document.body.insertAdjacentElement("afterbegin",e[0]??Mg()),document.body.insertAdjacentElement("beforeend",e[1]??Mg()),Pu++,()=>{Pu===1&&document.querySelectorAll("[data-radix-focus-guard]").forEach(t=>t.remove()),Pu--}},[])}function Mg(){const e=document.createElement("span");return e.setAttribute("data-radix-focus-guard",""),e.tabIndex=0,e.style.outline="none",e.style.opacity="0",e.style.position="fixed",e.style.pointerEvents="none",e}var Ws="right-scroll-bar-position",Hs="width-before-scroll-bar",WN="with-scroll-bars-hidden",HN="--removed-body-scroll-bar-size";function _u(e,t){return typeof e=="function"?e(t):e&&(e.current=t),e}function KN(e,t){var n=m.useState(function(){return{value:e,callback:t,facade:{get current(){return n.value},set current(r){var o=n.value;o!==r&&(n.value=r,n.callback(r,o))}}}})[0];return n.callback=t,n.facade}var GN=typeof window<"u"?m.useLayoutEffect:m.useEffect,Ng=new WeakMap;function YN(e,t){var n=KN(null,function(r){return e.forEach(function(o){return _u(o,r)})});return GN(function(){var r=Ng.get(n);if(r){var o=new Set(r),i=new Set(e),s=n.current;o.forEach(function(a){i.has(a)||_u(a,null)}),i.forEach(function(a){o.has(a)||_u(a,s)})}Ng.set(n,e)},[e]),n}function XN(e){return e}function QN(e,t){t===void 0&&(t=XN);var n=[],r=!1,o={read:function(){if(r)throw new Error("Sidecar: could not `read` from an `assigned` medium. `read` could be used only with `useMedium`.");return n.length?n[n.length-1]:e},useMedium:function(i){var s=t(i,r);return n.push(s),function(){n=n.filter(function(a){return a!==s})}},assignSyncMedium:function(i){for(r=!0;n.length;){var s=n;n=[],s.forEach(i)}n={push:function(a){return i(a)},filter:function(){return n}}},assignMedium:function(i){r=!0;var s=[];if(n.length){var a=n;n=[],a.forEach(i),s=n}var l=function(){var c=s;s=[],c.forEach(i)},u=function(){return Promise.resolve().then(l)};u(),n={push:function(c){s.push(c),u()},filter:function(c){return s=s.filter(c),n}}}};return o}function ZN(e){e===void 0&&(e={});var t=QN(null);return t.options=qe({async:!0,ssr:!1},e),t}var O1=function(e){var t=e.sideCar,n=f1(e,["sideCar"]);if(!t)throw new Error("Sidecar: please provide `sideCar` property to import the right car");var r=t.read();if(!r)throw new Error("Sidecar medium not found");return m.createElement(r,qe({},n))};O1.isSideCarExport=!0;function qN(e,t){return e.useMedium(t),O1}var A1=ZN(),Eu=function(){},fl=m.forwardRef(function(e,t){var n=m.useRef(null),r=m.useState({onScrollCapture:Eu,onWheelCapture:Eu,onTouchMoveCapture:Eu}),o=r[0],i=r[1],s=e.forwardProps,a=e.children,l=e.className,u=e.removeScrollBar,c=e.enabled,f=e.shards,d=e.sideCar,p=e.noIsolation,w=e.inert,v=e.allowPinchZoom,b=e.as,h=b===void 0?"div":b,g=e.gapMode,x=f1(e,["forwardProps","children","className","removeScrollBar","enabled","shards","sideCar","noIsolation","inert","allowPinchZoom","as","gapMode"]),S=d,P=YN([n,t]),_=qe(qe({},x),o);return m.createElement(m.Fragment,null,c&&m.createElement(S,{sideCar:A1,removeScrollBar:u,shards:f,noIsolation:p,inert:w,setCallbacks:i,allowPinchZoom:!!v,lockRef:n,gapMode:g}),s?m.cloneElement(m.Children.only(a),qe(qe({},_),{ref:P})):m.createElement(h,qe({},_,{className:l,ref:P}),a))});fl.defaultProps={enabled:!0,removeScrollBar:!0,inert:!1};fl.classNames={fullWidth:Hs,zeroRight:Ws};var JN=function(){if(typeof __webpack_nonce__<"u")return __webpack_nonce__};function eL(){if(!document)return null;var e=document.createElement("style");e.type="text/css";var t=JN();return t&&e.setAttribute("nonce",t),e}function tL(e,t){e.styleSheet?e.styleSheet.cssText=t:e.appendChild(document.createTextNode(t))}function nL(e){var t=document.head||document.getElementsByTagName("head")[0];t.appendChild(e)}var rL=function(){var e=0,t=null;return{add:function(n){e==0&&(t=eL())&&(tL(t,n),nL(t)),e++},remove:function(){e--,!e&&t&&(t.parentNode&&t.parentNode.removeChild(t),t=null)}}},oL=function(){var e=rL();return function(t,n){m.useEffect(function(){return e.add(t),function(){e.remove()}},[t&&n])}},R1=function(){var e=oL(),t=function(n){var r=n.styles,o=n.dynamic;return e(r,o),null};return t},iL={left:0,top:0,right:0,gap:0},Cu=function(e){return parseInt(e||"",10)||0},sL=function(e){var t=window.getComputedStyle(document.body),n=t[e==="padding"?"paddingLeft":"marginLeft"],r=t[e==="padding"?"paddingTop":"marginTop"],o=t[e==="padding"?"paddingRight":"marginRight"];return[Cu(n),Cu(r),Cu(o)]},aL=function(e){if(e===void 0&&(e="margin"),typeof window>"u")return iL;var t=sL(e),n=document.documentElement.clientWidth,r=window.innerWidth;return{left:t[0],top:t[1],right:t[2],gap:Math.max(0,r-n+t[2]-t[0])}},lL=R1(),eo="data-scroll-locked",uL=function(e,t,n,r){var o=e.left,i=e.top,s=e.right,a=e.gap;return n===void 0&&(n="margin"),`
   .`.concat(WN,` {
    overflow: hidden `).concat(r,`;
    padding-right: `).concat(a,"px ").concat(r,`;
@@ -347,70 +355,124 @@ function yN({holder:e}){return y.jsx("div",{className:"absolute p-2 border round
 
 If you want to hide the \`${t.titleName}\`, you can wrap it with our VisuallyHidden component.
 
-For more information, see https://radix-ui.com/primitives/docs/components/${t.docsSlug}`;return m.useEffect(()=>{e&&(document.getElementById(e)||console.error(n))},[n,e]),null},LL="DialogDescriptionWarning",DL=({contentRef:e,descriptionId:t})=>{const r=`Warning: Missing \`Description\` or \`aria-describedby={undefined}\` for {${J1(LL).contentName}}.`;return m.useEffect(()=>{var i;const o=(i=e.current)==null?void 0:i.getAttribute("aria-describedby");t&&o&&(document.getElementById(t)||console.warn(r))},[r,e,t]),null},eb=$1,tb=z1,nb=U1,dl=W1,pl=H1,hl=G1,ml=X1,rb=Z1;const IL=eb,VL=tb,$L=nb,ob=m.forwardRef(({className:e,...t},n)=>y.jsx(dl,{className:de("fixed inset-0 z-50 bg-black/75  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",e),...t,ref:n}));ob.displayName=dl.displayName;const FL=B0("fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-500",{variants:{side:{top:"inset-x-0 top-0 border-b data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",bottom:"inset-x-0 bottom-0 border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",left:"inset-y-0 left-0 h-full w-3/4 border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:max-w-sm",right:"inset-y-0 right-0 h-full w-3/4  border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm"}},defaultVariants:{side:"right"}}),ib=m.forwardRef(({side:e="right",className:t,children:n,...r},o)=>y.jsxs($L,{children:[y.jsx(ob,{}),y.jsxs(pl,{ref:o,className:de(FL({side:e}),t),...r,children:[n,y.jsxs(rb,{className:"absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary",children:[y.jsx(Z0,{className:"w-4 h-4"}),y.jsx("span",{className:"sr-only",children:"关闭目录"})]})]})]}));ib.displayName=pl.displayName;const sb=({className:e,...t})=>y.jsx("div",{className:de("flex flex-col space-y-2 text-center sm:text-left",e),...t});sb.displayName="SheetHeader";const ab=m.forwardRef(({className:e,...t},n)=>y.jsx(hl,{ref:n,className:de("text-lg font-semibold text-foreground",e),...t}));ab.displayName=hl.displayName;const zL=m.forwardRef(({className:e,...t},n)=>y.jsx(ml,{ref:n,className:de("text-sm text-muted-foreground",e),...t}));zL.displayName=ml.displayName;const lb=m.createContext(void 0);function BL({children:e}){const[t,n]=m.useState(!0);return y.jsx(lb.Provider,{value:{menuOpen:t,setMenuOpen:n},children:e})}function UL(){const e=m.useContext(lb);if(!e)throw new Error("should be use in a context provider");return e}const catalogueChapters = [
-  {"number":"1","title":"开始页面","english":"BEGIN"},
-  {"number":"2","title":"天降飞贼","english":"Snitch from the sky"},
-  {"number":"3","title":"继续追！","english":"Keep chasing"},
-  {"number":"4","title":"抄小道","english":"take the shortcut"},
-  {"number":"5","title":"来到院落","english":"Come to the compound"},
-  {"number":"6","title":"偶遇大师","english":"Encounter the Master"},
-  {"number":"8","title":"先扎和后染","english":"TIE or DYE"},
-  {"number":"9","title":"搞一根木棍","english":"Get a stick"},
-  {"number":"10","title":"抢嘴里的","english":"Grab from mouth"},
-  {"number":"11","title":"等老师回来","english":"Wait for teacher"},
-  {"number":"12","title":"扎法的选择","english":"Choose how to tie"},
-  {"number":"13","title":"扎法的选择页面","english":"How to tie?"},
-  {"number":"14","title":"平铺麻布","english":"Tile linen"},
-  {"number":"15","title":"立柱木棍，抵住麻布","english":"Pillar sticks, against the linen"},
-  {"number":"16","title":"旋转木棍","english":"Spinner sticks"},
-  {"number":"17","title":"拿起皮筋绑麻布(上）","english":"Pick up a rubber band and tie the burlap（①）"},
-  {"number":"18","title":"拿起皮筋绑麻布(下）","english":"Pick up a rubber band and tie the burlap（②）"},
-  {"number":"19","title":"螺旋纹的展示","english":"Spiral pattern DISPLAY"},
-  {"number":"20","title":"用丝巾卷绳子","english":"Roll the rope with a silk scarf"},
-  {"number":"21","title":"抽紧丝巾","english":"Tighten the scarf"},
-  {"number":"22","title":"扎紧绳子打活结","english":"Tie the rope in a slipknot"},
-  {"number":"23","title":"鱼鳞纹的展示","english":"Fish scales pattern DISPLAY"},
-  {"number":"24","title":"叠方巾","english":"Folded square scarf"},
-  {"number":"25","title":"折方巾","english":"Folded square scarf"},
-  {"number":"26","title":"夹方巾","english":"Clip square scarf"},
-  {"number":"27","title":"捆方巾","english":"Tie square scarf"},
-  {"number":"28","title":"拆方巾","english":"Dismantle the square scarf"},
-  {"number":"29","title":"棱形纹的展示","english":"Prismatic pattern DISPLAY"},
-  {"number":"30","title":"装石子","english":"Fill the stones"},
-  {"number":"31","title":"捆石子","english":"Bundle the stones"},
-  {"number":"32","title":"拆皮筋","english":"Remove the rubber bands"},
-  {"number":"33","title":"包物扎的展示","english":"Stone-wrapping pattern DISPLAY"},
-  {"number":"34","title":"来到染坊","english":"Come to the dyeing house"},
-  {"number":"35","title":"用水浸泡","english":"Soak in water"},
-  {"number":"36","title":"浸入染缸","english":"Immerse in a dye vat"},
-  {"number":"37","title":"搅拌染缸","english":"Stir the dye vat"},
-  {"number":"37-1","title":"制染原料","english":"Raw materials for dyeing"},
-  {"number":"38","title":"捞出方巾","english":"Remove the square"},
-  {"number":"39","title":"展现氧化","english":"Exhibits oxidation"},
-  {"number":"40","title":"成品1.螺旋纹","english":"Finished product 1. Spiral pattern"},
-  {"number":"41","title":"结局一","english":"THE ENDING 1"},
-  {"number":"42","title":"成品2.鱼鳞纹","english":"Finished product 2. Fish scale pattern"},
-  {"number":"43","title":"结局二","english":"THE ENDING 2"},
-  {"number":"44","title":"成品3.棱形纹","english":"Finished product 3. Prismatic pattern"},
-  {"number":"45","title":"结局三","english":"THE ENDING 3"},
-  {"number":"46","title":"成品4.包物扎","english":"Finished product 4. Stone-wrapping pattern"},
-  {"number":"47","title":"结局四","english":"THE ENDING 4"}
+For more information, see https://radix-ui.com/primitives/docs/components/${t.docsSlug}`;return m.useEffect(()=>{e&&(document.getElementById(e)||console.error(n))},[n,e]),null},LL="DialogDescriptionWarning",DL=({contentRef:e,descriptionId:t})=>{const r=`Warning: Missing \`Description\` or \`aria-describedby={undefined}\` for {${J1(LL).contentName}}.`;return m.useEffect(()=>{var i;const o=(i=e.current)==null?void 0:i.getAttribute("aria-describedby");t&&o&&(document.getElementById(t)||console.warn(r))},[r,e,t]),null},eb=$1,tb=z1,nb=U1,dl=W1,pl=H1,hl=G1,ml=X1,rb=Z1;const IL=eb,VL=tb,$L=nb,ob=m.forwardRef(({className:e,...t},n)=>y.jsx(dl,{className:de("fixed inset-0 z-50 bg-black/75  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",e),...t,ref:n}));ob.displayName=dl.displayName;const FL=B0("fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-500",{variants:{side:{top:"inset-x-0 top-0 border-b data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",bottom:"inset-x-0 bottom-0 border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",left:"inset-y-0 left-0 h-full w-3/4 border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:max-w-sm",right:"inset-y-0 right-0 h-full w-3/4  border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm"}},defaultVariants:{side:"right"}}),ib=m.forwardRef(({side:e="right",className:t,children:n,...r},o)=>y.jsxs($L,{children:[y.jsx(ob,{}),y.jsxs(pl,{ref:o,className:de(FL({side:e}),t),...r,children:[n,y.jsxs(rb,{className:"absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary",children:[y.jsx(Z0,{className:"w-4 h-4"}),y.jsx("span",{className:"sr-only",children:"Close catalogue / 关闭目录"})]})]})]}));ib.displayName=pl.displayName;const sb=({className:e,...t})=>y.jsx("div",{className:de("flex flex-col space-y-2 text-center sm:text-left",e),...t});sb.displayName="SheetHeader";const ab=m.forwardRef(({className:e,...t},n)=>y.jsx(hl,{ref:n,className:de("text-lg font-semibold text-foreground",e),...t}));ab.displayName=hl.displayName;const zL=m.forwardRef(({className:e,...t},n)=>y.jsx(ml,{ref:n,className:de("text-sm text-muted-foreground",e),...t}));zL.displayName=ml.displayName;const lb=m.createContext(void 0);function BL({children:e}){const[t,n]=m.useState(!0);return y.jsx(lb.Provider,{value:{menuOpen:t,setMenuOpen:n},children:e})}function UL(){const e=m.useContext(lb);if(!e)throw new Error("should be use in a context provider");return e}const catalogueChapters = [
+  {"number":"1","title":"开始页面","english":"Begin"},
+  {"number":"2","title":"天降飞贼","english":"A Thief from Above"},
+  {"number":"3","title":"继续追！","english":"Keep Chasing"},
+  {"number":"4","title":"抄小道","english":"Take the Shortcut"},
+  {"number":"5","title":"来到院落","english":"At the Courtyard Gate"},
+  {"number":"6","title":"偶遇大师","english":"Meet the Master"},
+  {"number":"8","title":"先扎和后染","english":"Tie or Dye"},
+  {"number":"9","title":"搞一根木棍","english":"Find a Wooden Stick"},
+  {"number":"10","title":"抢嘴里的","english":"Grab the Stick"},
+  {"number":"11","title":"等老师回来","english":"Wait for the Master"},
+  {"number":"12","title":"扎法的选择","english":"Explore the Techniques"},
+  {"number":"13","title":"扎法的选择页面","english":"Choose a Pattern"},
+  {"number":"14","title":"平铺麻布","english":"Lay Out the Cloth"},
+  {"number":"15","title":"立柱木棍，抵住麻布","english":"Set the Stick in Place"},
+  {"number":"16","title":"旋转木棍","english":"Twist the Stick"},
+  {"number":"17","title":"拿起皮筋绑麻布(上）","english":"Bind the Cloth, Part 1"},
+  {"number":"18","title":"拿起皮筋绑麻布(下）","english":"Bind the Cloth, Part 2"},
+  {"number":"19","title":"螺旋纹的展示","english":"Reveal the Spiral"},
+  {"number":"20","title":"用丝巾卷绳子","english":"Wrap the Cord with Silk"},
+  {"number":"21","title":"抽紧丝巾","english":"Pull the Silk Tight"},
+  {"number":"22","title":"扎紧绳子打活结","english":"Tie a Slipknot"},
+  {"number":"23","title":"鱼鳞纹的展示","english":"Reveal the Fish Scales"},
+  {"number":"24","title":"叠方巾","english":"Fold the Square Cloth"},
+  {"number":"25","title":"折方巾","english":"Fold the Cloth Again"},
+  {"number":"26","title":"夹方巾","english":"Clamp the Cloth"},
+  {"number":"27","title":"捆方巾","english":"Bind the Cloth"},
+  {"number":"28","title":"拆方巾","english":"Unwrap the Cloth"},
+  {"number":"29","title":"棱形纹的展示","english":"Reveal the Diamond Pattern"},
+  {"number":"30","title":"装石子","english":"Wrap the Stones"},
+  {"number":"31","title":"捆石子","english":"Bind the Stones"},
+  {"number":"32","title":"拆皮筋","english":"Remove the Rubber Bands"},
+  {"number":"33","title":"包物扎的展示","english":"Reveal the Stone Pattern"},
+  {"number":"34","title":"来到染坊","english":"Enter the Dye Workshop"},
+  {"number":"35","title":"用水浸泡","english":"Soak the Cloth"},
+  {"number":"36","title":"浸入染缸","english":"Dip into the Dye Vat"},
+  {"number":"37","title":"搅拌染缸","english":"Stir the Dye Vat"},
+  {"number":"37-1","title":"制染原料","english":"How Indigo Dye Is Made"},
+  {"number":"38","title":"捞出方巾","english":"Lift the Cloth Out"},
+  {"number":"39","title":"展现氧化","english":"Watch the Indigo Oxidize"},
+  {"number":"40","title":"成品1.螺旋纹","english":"Finished Spiral"},
+  {"number":"41","title":"结局一","english":"Ending One"},
+  {"number":"42","title":"成品2.鱼鳞纹","english":"Finished Fish Scales"},
+  {"number":"43","title":"结局二","english":"Ending Two"},
+  {"number":"44","title":"成品3.棱形纹","english":"Finished Diamond Pattern"},
+  {"number":"45","title":"结局三","english":"Ending Three"},
+  {"number":"46","title":"成品4.包物扎","english":"Finished Stone Pattern"},
+  {"number":"47","title":"结局四","english":"Ending Four"}
 ];
 const catalogueSections = [
-  { name: "故事引入", english: "THE STORY", start: 1, end: 8 },
-  { name: "扎结技法", english: "TIE", start: 9, end: 33 },
-  { name: "染色与结局", english: "DYE & ENDINGS", start: 34, end: 47 }
+  { name: "故事引入", english: "The Story", start: 1, end: 8 },
+  { name: "扎结技法", english: "Tying Techniques", start: 9, end: 33 },
+  { name: "染色与结局", english: "Dyeing & Endings", start: 34, end: 47 }
 ];
 
+
+function gameWords(english, chinese) {
+  return y.jsxs("span", {
+    className: "game-words",
+    children: [
+      y.jsx("span", { lang: "en", children: english }),
+      y.jsx("span", { lang: "zh-CN", children: chinese })
+    ]
+  });
+}
+
+function gameLabel(english, chinese) {
+  return english + " / " + chinese;
+}
+
+function GameLoader({ words = ["Loading…", "正在加载…"], boot = false }) {
+  return y.jsxs("div", {
+    className: boot ? "game-loading game-loading--boot" : "game-loading",
+    role: "status",
+    children: [
+      y.jsx("span", { className: "game-loading__ring", "aria-hidden": true }),
+      gameWords(...words)
+    ]
+  });
+}
+
+function useGameSounds(enabled) {
+  m.useEffect(() => {
+    if (!enabled) return;
+    function soundForClick(event) {
+      const control = event.target.closest?.("button, [role=button]");
+      if (!control || control.disabled || control.getAttribute("aria-disabled") === "true") return;
+      const defaultSound = control.closest(".chapter-catalogue__grid, .chapter-catalogue__map") ? "cloth" : "wood";
+      playGameSound(control.dataset.sound || defaultSound);
+    }
+    document.addEventListener("click", soundForClick, true);
+    return () => document.removeEventListener("click", soundForClick, true);
+  }, [enabled]);
+}
+
+function SoundEffectsButton() {
+  const { save, toggleEffects } = m.useContext(gameSession);
+  return y.jsx("button", {
+    type: "button",
+    className: "game-button game-effects",
+    "aria-pressed": !save.effectsMuted,
+    "aria-label": gameLabel("Sound effects", "音效"),
+    title: gameLabel("Sound effects", "音效"),
+    "data-sound": "none",
+    onClick: toggleEffects,
+    children: save.effectsMuted ? gameWords("SFX off", "音效关") : gameWords("SFX on", "音效开")
+  });
+}
 
 function WL({ bespoke }) {
   const { menuOpen, setMenuOpen } = UL();
+  const { playEffect } = m.useContext(gameSession);
   b1("m", event => {
     if (menuOpen || event.repeat) return;
     event.preventDefault();
+    playEffect("wood");
     setMenuOpen(true);
   });
-
   return y.jsxs(IL, {
     open: menuOpen,
     onOpenChange: setMenuOpen,
@@ -418,7 +480,7 @@ function WL({ bespoke }) {
       y.jsxs(VL, {
         className: "game-button game-directory",
         "aria-keyshortcuts": "M",
-        children: [y.jsx(QT, { className: "size-4", "aria-hidden": true }), "章节"]
+        children: [y.jsx(QT, { className: "size-4", "aria-hidden": true }), gameWords("Chapters", "章节")]
       }),
       y.jsx(ib, {
         className: "chapter-catalogue",
@@ -428,49 +490,48 @@ function WL({ bespoke }) {
     ]
   });
 }
+
 function ChapterCatalogue({ bespoke, onClose }) {
   const { save, resume, start } = m.useContext(gameSession);
   const [showMap, setShowMap] = m.useState(false);
-  const [active, setActive] = m.useState(bespoke.active);
+  const active = bespoke.active;
   const currentNumber = active.name.slice(1);
   const [sectionIndex, selectSection] = m.useState(() => {
-    const number = Number.parseInt(bespoke.active.name.slice(1), 10);
+    const number = Number.parseInt(currentNumber, 10);
     return Math.max(0, catalogueSections.findIndex(section => number >= section.start && number <= section.end));
   });
   const scrollArea = m.useRef(null);
-
-  m.useEffect(() => {
-    bespoke.on("onActiveChange", setActive);
-    return () => bespoke.off("onActiveChange", setActive);
-  }, [bespoke]);
-
   const section = catalogueSections[sectionIndex];
   const chapters = catalogueChapters.filter(chapter => {
     const number = Number.parseInt(chapter.number, 10);
     return number >= section.start && number <= section.end;
   });
-
+  const checkpointTitle = save.checkpoint && gameSceneTitle(save.checkpoint.scene);
   return y.jsxs(y.Fragment, {
     children: [
       y.jsxs("header", {
         className: "chapter-catalogue__header",
         children: [
-          y.jsx("span", { className: "chapter-catalogue__brand", children: "TIE-DYE" }),
-          y.jsx(ab, { className: "chapter-catalogue__title", children: "扎染章节目录" }),
-          y.jsx("p", { className: "chapter-catalogue__count", children: catalogueChapters.length + " 个章节 · 已看结局 " + save.endings.length + "/4" }),
+          y.jsx("span", { className: "chapter-catalogue__brand", lang: "en", children: "TIE-DYE" }),
+          y.jsx(ab, { className: "chapter-catalogue__title", children: gameWords("Chapter Catalogue", "扎染章节目录") }),
+          y.jsx("div", {
+            className: "chapter-catalogue__meta",
+            children: gameWords(`${catalogueChapters.length} chapters · Endings viewed ${save.endings.length}/4`,
+              `${catalogueChapters.length} 个章节 · 已看结局 ${save.endings.length}/4`)
+          }),
           active.name === "preview" && y.jsxs("div", {
             className: "chapter-catalogue__resume",
             children: [
               save.checkpoint && y.jsx("button", {
-                type: "button", className: "game-button game-button--primary",
-                onClick: () => { resume(); onClose(); }, children: "继续上次"
+                type: "button", className: "game-button game-button--primary", "data-sound": "chime",
+                onClick: () => { resume(); onClose(); }, children: gameWords("Resume", "继续上次")
               }),
               y.jsx("button", {
                 type: "button", className: save.checkpoint ? "game-button" : "game-button game-button--primary",
-                onClick: () => { start(); onClose(); },
-                children: save.checkpoint ? "从头开始" : "开始游戏"
+                "data-sound": "chime", onClick: () => { start(); onClose(); },
+                children: save.checkpoint ? gameWords("Start over", "从头开始") : gameWords("Start game", "开始游戏")
               }),
-              save.checkpoint && y.jsx("p", { children: "上次玩到：" + gameSceneTitle(save.checkpoint.scene) })
+              checkpointTitle && y.jsx("p", { children: gameWords("Last played: " + checkpointTitle[0], "上次玩到：" + checkpointTitle[1]) })
             ]
           })
         ]
@@ -478,13 +539,13 @@ function ChapterCatalogue({ bespoke, onClose }) {
       y.jsxs("div", {
         className: "chapter-catalogue__views",
         role: "group",
-        "aria-label": "目录显示方式",
+        "aria-label": gameLabel("Catalogue view", "目录显示方式"),
         children: [
           y.jsx("button", {
-            type: "button", "aria-pressed": !showMap, onClick: () => setShowMap(false), children: "章节列表"
+            type: "button", "aria-pressed": !showMap, onClick: () => setShowMap(false), children: gameWords("Chapter list", "章节列表")
           }),
           y.jsx("button", {
-            type: "button", "aria-pressed": showMap, onClick: () => setShowMap(true), children: "流程图"
+            type: "button", "aria-pressed": showMap, onClick: () => setShowMap(true), children: gameWords("Story map", "流程图")
           })
         ]
       }),
@@ -495,18 +556,15 @@ function ChapterCatalogue({ bespoke, onClose }) {
             children: [
               y.jsx("nav", {
                 className: "chapter-catalogue__sections",
-                "aria-label": "章节分组",
-                children: catalogueSections.map((item, index) => y.jsxs("button", {
+                "aria-label": gameLabel("Chapter groups", "章节分组"),
+                children: catalogueSections.map((item, index) => y.jsx("button", {
                   type: "button",
                   "aria-pressed": sectionIndex === index,
                   onClick: () => {
                     selectSection(index);
                     scrollArea.current?.scrollTo(0, 0);
                   },
-                  children: [
-                    y.jsx("span", { className: "chapter-catalogue__section-name", children: item.name }),
-                    y.jsx("span", { className: "chapter-catalogue__section-english", children: item.english })
-                  ]
+                  children: gameWords(item.english, item.name)
                 }, item.name))
               }),
               y.jsx("div", {
@@ -514,28 +572,26 @@ function ChapterCatalogue({ bespoke, onClose }) {
                 className: "chapter-catalogue__scroll",
                 children: y.jsx("ol", {
                   className: "chapter-catalogue__grid",
-                  "aria-label": section.name,
+                  "aria-label": gameLabel(section.english, section.name),
                   children: chapters.map(chapter => {
                     const id = "p" + chapter.number;
                     return y.jsx("li", {
                       children: y.jsxs("button", {
                         type: "button",
                         "aria-current": chapter.number === currentNumber ? "true" : undefined,
-                        onClick: () => {
-                          openChapter(bespoke, id);
-                          onClose();
-                        },
+                        "data-sound": Number.parseInt(chapter.number, 10) >= 34 ? "water" : "cloth",
+                        onClick: () => { openChapter(bespoke, id); onClose(); },
                         children: [
                           y.jsx("span", {
-                            className: "chapter-catalogue__number",
-                            children: chapter.number.padStart(2, "0")
+                            className: "chapter-catalogue__number", children: chapter.number.padStart(2, "0")
                           }),
                           y.jsxs("span", {
                             className: "chapter-catalogue__label",
                             children: [
-                              y.jsx("span", { className: "chapter-catalogue__chapter", children: chapter.title }),
-                              y.jsx("span", { className: "chapter-catalogue__translation", lang: "en", children: chapter.english }),
-                              save.endings.includes(id) && y.jsx("span", { className: "chapter-catalogue__translation chapter-catalogue__visited", children: "已观看" })
+                              gameWords(chapter.english, chapter.title),
+                              save.endings.includes(id) && y.jsx("span", {
+                                className: "chapter-catalogue__visited", children: gameWords("Viewed", "已观看")
+                              })
                             ]
                           }),
                           y.jsx("span", { className: "chapter-catalogue__arrow", "aria-hidden": true, children: "›" })
@@ -551,7 +607,57 @@ function ChapterCatalogue({ bespoke, onClose }) {
   });
 }
 
-const ku=new Map,HL=({bespoke:e})=>{const{loading:t,value:n=""}=BM(async()=>{if(ku.has("minimap.svg"))return ku.get("minimap.svg");const o=await(await fetch("/minimap.svg")).text();return ku.set("minimap.svg",o),o});return t?y.jsx("div",{className:"flex items-center justify-center h-full",children:y.jsx(tk,{className:" animate-spin"})}):y.jsx(KL,{value:n,bespoke:e})};function KL({ value, bespoke }) {
+let storyMapSvg;
+function HL({ bespoke }) {
+  const [map, setMap] = m.useState(() => ({ svg: storyMapSvg, failed: false }));
+  const [attempt, setAttempt] = m.useState(0);
+  m.useEffect(() => {
+    if (map.svg) return;
+    const controller = new AbortController();
+    fetch("/minimap.svg", { signal: controller.signal })
+      .then(response => {
+        if (!response.ok) throw new Error("Story map unavailable");
+        return response.text();
+      })
+      .then(svg => {
+        storyMapSvg = svg;
+        setMap({ svg, failed: false });
+      })
+      .catch(error => {
+        if (error.name !== "AbortError") setMap({ failed: true });
+      });
+    return () => controller.abort();
+  }, [attempt, map.svg]);
+
+  if (map.svg) return y.jsx(KL, { value: map.svg, bespoke });
+  if (!map.failed) return y.jsx(GameLoader, { words: ["Loading story map…", "正在加载流程图…"] });
+  return y.jsxs("div", {
+    className: "game-loading",
+    children: [
+      gameWords("The story map is unavailable.", "流程图暂时无法加载。"),
+      y.jsx("button", {
+        className: "game-button", type: "button",
+        onClick: () => { setMap({ failed: false }); setAttempt(value => value + 1); },
+        children: gameWords("Try again", "重试")
+      })
+    ]
+  });
+}
+
+function setStoryMapWords(title, english, chinese) {
+  if (!title) return;
+  const primary = document.createElement("span");
+  primary.lang = "en";
+  primary.textContent = english;
+  const secondary = document.createElement("span");
+  secondary.lang = "zh-CN";
+  secondary.textContent = chinese;
+  title.classList.add("story-map-label");
+  title.replaceChildren(primary, secondary);
+}
+
+function KL({ value, bespoke }) {
+  const { playEffect } = m.useContext(gameSession);
   const [active, setActive] = m.useState(bespoke.active);
   const { setMenuOpen } = UL();
   const mapRef = m.useRef(null);
@@ -562,9 +668,8 @@ const ku=new Map,HL=({bespoke:e})=>{const{loading:t,value:n=""}=BM(async()=>{if(
   }, [bespoke]);
 
   m.useEffect(() => {
-    const nodes = Array.from(
-      mapRef.current.querySelectorAll('g[data-view-id^="topic-node:"]')
-    ).slice(1);
+    const [root, ...nodes] = mapRef.current.querySelectorAll('g[data-view-id^="topic-node:"]');
+    setStoryMapWords(root?.querySelector("foreignObject div"), "TIE-DYE", "扎染流程图");
     const removeListeners = [];
     const chapterToReveal = active.name === "preview" ? "p1" : active.name;
 
@@ -576,7 +681,10 @@ const ku=new Map,HL=({bespoke:e})=>{const{loading:t,value:n=""}=BM(async()=>{if(
       node.style.cursor = "pointer";
       node.setAttribute("role", "button");
       node.setAttribute("tabindex", "0");
-      node.setAttribute("aria-label", node.textContent.trim());
+      const chapter = catalogueChapters.find(item => item.number === chapterNumber);
+      node.setAttribute("aria-label", chapterNumber + ". " + gameLabel(chapter.english, chapter.title));
+      node.dataset.sound = Number.parseInt(chapterNumber, 10) >= 34 ? "water" : "cloth";
+      setStoryMapWords(node.querySelector("foreignObject div"), chapterNumber + ". " + chapter.english, chapter.title);
 
       const border = Array.from(node.children).find(child =>
         child.getAttribute("data-view-id")?.startsWith("topic-node-border:")
@@ -593,6 +701,7 @@ const ku=new Map,HL=({bespoke:e})=>{const{loading:t,value:n=""}=BM(async()=>{if(
       const onKeyDown = event => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
+          playEffect(node.dataset.sound);
           selectChapter();
         }
       };
@@ -614,7 +723,7 @@ const ku=new Map,HL=({bespoke:e})=>{const{loading:t,value:n=""}=BM(async()=>{if(
     });
 
     return () => removeListeners.forEach(remove => remove());
-  }, [active, bespoke, setMenuOpen]);
+  }, [active, bespoke, setMenuOpen, playEffect]);
 
   return y.jsx("div", {
     ref: mapRef,
@@ -638,15 +747,16 @@ function readGameSave(holder) {
     const checkpoint = previous?.scene !== "preview" && holder.slideshows.has(previous?.scene)
       ? { scene: previous.scene, pattern: tiePatterns.includes(previous.pattern) ? previous.pattern : null }
       : null;
-    return { checkpoint, endings, muted: saved?.muted === true };
+    return { checkpoint, endings, muted: saved?.muted === true, effectsMuted: saved?.effectsMuted === true };
   } catch {
-    return { checkpoint: null, endings: [], muted: false };
+    return { checkpoint: null, endings: [], muted: false, effectsMuted: false };
   }
 }
 
 function GameSession({ holder, children }) {
   const [save, setSave] = m.useState(() => readGameSave(holder));
   const saved = m.useRef(save);
+  useGameSounds(!save.effectsMuted);
   function update(changes) {
     const next = { ...saved.current, ...changes };
     saved.current = next;
@@ -682,7 +792,14 @@ function GameSession({ holder, children }) {
     value: {
       save, resume, markEnding,
       start: () => holder.pushAndStore("p1", undefined, {}),
-      toggleSound: () => update({ muted: !saved.current.muted })
+      toggleSound: () => update({ muted: !saved.current.muted }),
+      toggleEffects: () => {
+        playGameSound("wood");
+        update({ effectsMuted: !saved.current.effectsMuted });
+      },
+      playEffect: name => {
+        if (!saved.current.effectsMuted) playGameSound(name);
+      }
     },
     children
   });
@@ -695,7 +812,7 @@ function openChapter(holder, id) {
 
 function gameSceneTitle(id) {
   const chapter = catalogueChapters.find(item => "p" + item.number === id);
-  return chapter?.title || (id === "end" ? "片尾" : id === "preview" ? "首页" : "");
+  return chapter ? [chapter.english, chapter.title] : id === "end" ? ["Credits", "片尾"] : ["Home", "首页"];
 }
 
 function GameFrame({ begin, debug, holder, chooses }) {
@@ -708,7 +825,7 @@ function GameFrame({ begin, debug, holder, chooses }) {
   const scene = holder.slideshows.get(active.name);
   if (!scene) return y.jsx(Cg, {});
 
-  const title = gameSceneTitle(active.name) || scene.opts.name;
+  const title = gameWords(...gameSceneTitle(active.name));
   const body = y.jsx(scene.default, { holder });
   return y.jsx(GameSession, {
     holder,
@@ -725,12 +842,15 @@ function GameFrame({ begin, debug, holder, chooses }) {
                 children: [
                   holder.stack.length > 1 && y.jsx("button", {
                     type: "button", className: "game-button game-back", onClick: () => holder.pre(),
-                    children: "‹ 返回"
+                    children: gameWords("‹ Back", "返回")
                   }),
                   y.jsx("span", { className: "game-header__title", children: title })
                 ]
               }),
-              y.jsx(WL, { bespoke: holder })
+              y.jsxs("div", {
+                className: "game-header__actions",
+                children: [y.jsx(SoundEffectsButton, {}), y.jsx(WL, { bespoke: holder })]
+              })
             ]
           }),
           y.jsx("div", {
@@ -773,25 +893,44 @@ function GameIntro({ cover = false }) {
           cover ? y.jsxs(y.Fragment, {
             children: [
               y.jsx("img", { className: "game-intro__logo", src: "/preview-title.webp", alt: "TIE-DYE" }),
-              y.jsx("img", { className: "game-intro__credits", src: "/WechatIMG524.jpg", alt: "创作团队" })
+              y.jsx("img", { className: "game-intro__credits", src: "/WechatIMG524.jpg", alt: "Produced by Kompass Xu / 创作团队" })
             ]
           }) : y.jsxs(y.Fragment, {
             children: [
-              y.jsx("h1", { children: "扎染" }),
-              y.jsx("p", { children: "跟随一场意外的追逐走进小院，亲手扎结、染色，为妈妈做一份礼物。" }),
-              y.jsx("p", { className: "game-intro__help", children: "看完片段后，按画面提示选择路线，或用手指与鼠标完成扎染动作。" })
+              y.jsxs("h1", {
+                children: [
+                  y.jsxs("span", {
+                    className: "game-intro__original-title", lang: "en",
+                    children: ["TI", y.jsx("span", { className: "game-intro__rust", children: "E" }), "-DY", y.jsx("span", { className: "game-intro__blue", children: "E" })]
+                  }),
+                  y.jsx("span", { className: "game-intro__chinese-title", lang: "zh-CN", children: "扎染" })
+                ]
+              }),
+              y.jsx("p", {
+                children: gameWords("Tie-dyeing is an ancient Chinese dyeing technique and an example of intangible cultural heritage. Tying and dyeing are at the heart of the craft.",
+                  "扎染是中国古老的染色技艺，也是一项非物质文化遗产。扎结与染色是这门手艺的核心。")
+              }),
+              y.jsx("p", {
+                children: gameWords("An unexpected chase leads you into a mysterious courtyard. Learn to tie and dye fabric, create a gift for your mother, and discover different endings.",
+                  "一场意外的追逐把你带进神秘小院。在这里学习扎结与染色，亲手为妈妈做一份礼物，探索不同的结局。")
+              }),
+              y.jsx("p", {
+                className: "game-intro__help",
+                children: gameWords("Follow the prompts to choose a path and make each pattern with your finger or mouse.",
+                  "跟随提示选择路线，用手指或鼠标完成扎染动作。")
+              })
             ]
           }),
           y.jsxs("div", {
             className: "game-intro__actions",
             children: [
               cover && save.checkpoint && y.jsx("button", {
-                type: "button", className: "game-button game-button--primary", onClick: resume, children: "继续上次"
+                type: "button", className: "game-button game-button--primary", "data-sound": "chime", onClick: resume, children: gameWords("Resume", "继续上次")
               }),
               y.jsx("button", {
                 type: "button", className: "game-button game-button--primary",
-                onClick: cover ? start : () => holder.next(),
-                children: cover ? save.checkpoint ? "从头开始" : "开始游戏" : "进入剧情"
+                onClick: cover ? start : () => holder.next(), "data-sound": "chime",
+                children: cover ? save.checkpoint ? gameWords("Start over", "从头开始") : gameWords("Start game", "开始游戏") : gameWords("Enter the story", "进入剧情")
               })
             ]
           })
@@ -813,7 +952,7 @@ const materialScene = {
         children: [{
           key: "return", position: { bottom: 50, left: 768 },
           component: y.jsx(me, {
-            label: "返回搅拌",
+            label: ["Return to the vat", "返回搅拌"],
             onCallback: () => holder.stack.at(-2)?.name === "p37" ? holder.pre() : holder.push("p37")
           })
         }]
@@ -823,20 +962,26 @@ const materialScene = {
 };
 function YL({slideshows:e,intialChooses:t,debug:n,...r}){const o=new sT({slideshows:e,debug:n});return{useBespoke:()=>o,Bespoke:()=>m.createElement(GameFrame,{...r,debug:n,chooses:t,holder:o})}}function XL({position:e,className:t,children:n,...r},o){return y.jsx(Ce.div,{...r,className:de("absolute",t),style:{...r.style,...e},initial:{opacity:0},animate:{opacity:1},transition:{duration:1},ref:o,children:n})}m.forwardRef(XL);const ub=Object.freeze({left:0,top:0,width:16,height:16}),Ta=Object.freeze({rotate:0,vFlip:!1,hFlip:!1}),ip=Object.freeze({...ub,...Ta}),of=Object.freeze({...ip,body:"",hidden:!1});function QL(e,t){const n={};!e.hFlip!=!t.hFlip&&(n.hFlip=!0),!e.vFlip!=!t.vFlip&&(n.vFlip=!0);const r=((e.rotate||0)+(t.rotate||0))%4;return r&&(n.rotate=r),n}function $g(e,t){const n=QL(e,t);for(const r in of)r in Ta?r in e&&!(r in n)&&(n[r]=Ta[r]):r in t?n[r]=t[r]:r in e&&(n[r]=e[r]);return n}function ZL(e,t){const n=e.icons,r=e.aliases||Object.create(null),o=Object.create(null);function i(s){if(n[s])return o[s]=[];if(!(s in o)){o[s]=null;const a=r[s]&&r[s].parent,l=a&&i(a);l&&(o[s]=[a].concat(l))}return o[s]}return Object.keys(n).concat(Object.keys(r)).forEach(i),o}function qL(e,t,n){const r=e.icons,o=e.aliases||Object.create(null);let i={};function s(a){i=$g(r[a]||o[a],i)}return s(t),n.forEach(s),$g(e,i)}function cb(e,t){const n=[];if(typeof e!="object"||typeof e.icons!="object")return n;e.not_found instanceof Array&&e.not_found.forEach(o=>{t(o,null),n.push(o)});const r=ZL(e);for(const o in r){const i=r[o];i&&(t(o,qL(e,o,i)),n.push(o))}return n}const li=/^[a-z0-9]+(-[a-z0-9]+)*$/,gl=(e,t,n,r="")=>{const o=e.split(":");if(e.slice(0,1)==="@"){if(o.length<2||o.length>3)return null;r=o.shift().slice(1)}if(o.length>3||!o.length)return null;if(o.length>1){const a=o.pop(),l=o.pop(),u={provider:o.length>0?o[0]:r,prefix:l,name:a};return t&&!Ks(u)?null:u}const i=o[0],s=i.split("-");if(s.length>1){const a={provider:r,prefix:s.shift(),name:s.join("-")};return t&&!Ks(a)?null:a}if(n&&r===""){const a={provider:r,prefix:"",name:i};return t&&!Ks(a,n)?null:a}return null},Ks=(e,t)=>e?!!((e.provider===""||e.provider.match(li))&&(t&&e.prefix===""||e.prefix.match(li))&&e.name.match(li)):!1,JL={provider:"",aliases:{},not_found:{},...ub};function ju(e,t){for(const n in t)if(n in e&&typeof e[n]!=typeof t[n])return!1;return!0}function fb(e){if(typeof e!="object"||e===null)return null;const t=e;if(typeof t.prefix!="string"||!e.icons||typeof e.icons!="object"||!ju(e,JL))return null;const n=t.icons;for(const o in n){const i=n[o];if(!o.match(li)||typeof i.body!="string"||!ju(i,of))return null}const r=t.aliases||Object.create(null);for(const o in r){const i=r[o],s=i.parent;if(!o.match(li)||typeof s!="string"||!n[s]&&!r[s]||!ju(i,of))return null}return t}const Fg=Object.create(null);function eD(e,t){return{provider:e,prefix:t,icons:Object.create(null),missing:new Set}}function dr(e,t){const n=Fg[e]||(Fg[e]=Object.create(null));return n[t]||(n[t]=eD(e,t))}function sp(e,t){return fb(t)?cb(t,(n,r)=>{r?e.icons[n]=r:e.missing.add(n)}):[]}function tD(e,t,n){try{if(typeof n.body=="string")return e.icons[t]={...n},!0}catch{}return!1}let Ri=!1;function db(e){return typeof e=="boolean"&&(Ri=e),Ri}function zg(e){const t=typeof e=="string"?gl(e,!0,Ri):e;if(t){const n=dr(t.provider,t.prefix),r=t.name;return n.icons[r]||(n.missing.has(r)?null:void 0)}}function nD(e,t){const n=gl(e,!0,Ri);if(!n)return!1;const r=dr(n.provider,n.prefix);return tD(r,n.name,t)}function rD(e,t){if(typeof e!="object")return!1;if(typeof t!="string"&&(t=e.provider||""),Ri&&!t&&!e.prefix){let o=!1;return fb(e)&&(e.prefix="",cb(e,(i,s)=>{s&&nD(i,s)&&(o=!0)})),o}const n=e.prefix;if(!Ks({provider:t,prefix:n,name:"a"}))return!1;const r=dr(t,n);return!!sp(r,e)}const pb=Object.freeze({width:null,height:null}),hb=Object.freeze({...pb,...Ta}),oD=/(-?[0-9.]*[0-9]+[0-9.]*)/g,iD=/^-?[0-9.]*[0-9]+[0-9.]*$/g;function Bg(e,t,n){if(t===1)return e;if(n=n||100,typeof e=="number")return Math.ceil(e*t*n)/n;if(typeof e!="string")return e;const r=e.split(oD);if(r===null||!r.length)return e;const o=[];let i=r.shift(),s=iD.test(i);for(;;){if(s){const a=parseFloat(i);isNaN(a)?o.push(i):o.push(Math.ceil(a*t*n)/n)}else o.push(i);if(i=r.shift(),i===void 0)return o.join("");s=!s}}function sD(e,t="defs"){let n="";const r=e.indexOf("<"+t);for(;r>=0;){const o=e.indexOf(">",r),i=e.indexOf("</"+t);if(o===-1||i===-1)break;const s=e.indexOf(">",i);if(s===-1)break;n+=e.slice(o+1,i).trim(),e=e.slice(0,r).trim()+e.slice(s+1)}return{defs:n,content:e}}function aD(e,t){return e?"<defs>"+e+"</defs>"+t:t}function lD(e,t,n){const r=sD(e);return aD(r.defs,t+r.content+n)}const uD=e=>e==="unset"||e==="undefined"||e==="none";function cD(e,t){const n={...ip,...e},r={...hb,...t},o={left:n.left,top:n.top,width:n.width,height:n.height};let i=n.body;[n,r].forEach(v=>{const b=[],h=v.hFlip,g=v.vFlip;let x=v.rotate;h?g?x+=2:(b.push("translate("+(o.width+o.left).toString()+" "+(0-o.top).toString()+")"),b.push("scale(-1 1)"),o.top=o.left=0):g&&(b.push("translate("+(0-o.left).toString()+" "+(o.height+o.top).toString()+")"),b.push("scale(1 -1)"),o.top=o.left=0);let S;switch(x<0&&(x-=Math.floor(x/4)*4),x=x%4,x){case 1:S=o.height/2+o.top,b.unshift("rotate(90 "+S.toString()+" "+S.toString()+")");break;case 2:b.unshift("rotate(180 "+(o.width/2+o.left).toString()+" "+(o.height/2+o.top).toString()+")");break;case 3:S=o.width/2+o.left,b.unshift("rotate(-90 "+S.toString()+" "+S.toString()+")");break}x%2===1&&(o.left!==o.top&&(S=o.left,o.left=o.top,o.top=S),o.width!==o.height&&(S=o.width,o.width=o.height,o.height=S)),b.length&&(i=lD(i,'<g transform="'+b.join(" ")+'">',"</g>"))});const s=r.width,a=r.height,l=o.width,u=o.height;let c,f;s===null?(f=a===null?"1em":a==="auto"?u:a,c=Bg(f,l/u)):(c=s==="auto"?l:s,f=a===null?Bg(c,u/l):a==="auto"?u:a);const d={},p=(v,b)=>{uD(b)||(d[v]=b.toString())};p("width",c),p("height",f);const w=[o.left,o.top,l,u];return d.viewBox=w.join(" "),{attributes:d,viewBox:w,body:i}}const fD=/\sid="(\S+)"/g,dD="IconifyId"+Date.now().toString(16)+(Math.random()*16777216|0).toString(16);let pD=0;function hD(e,t=dD){const n=[];let r;for(;r=fD.exec(e);)n.push(r[1]);if(!n.length)return e;const o="suffix"+(Math.random()*16777216|Date.now()).toString(16);return n.forEach(i=>{const s=typeof t=="function"?t(i):t+(pD++).toString(),a=i.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");e=e.replace(new RegExp('([#;"])('+a+')([")]|\\.[a-z])',"g"),"$1"+s+o+"$3")}),e=e.replace(new RegExp(o,"g"),""),e}const sf=Object.create(null);function mD(e,t){sf[e]=t}function af(e){return sf[e]||sf[""]}function ap(e){let t;if(typeof e.resources=="string")t=[e.resources];else if(t=e.resources,!(t instanceof Array)||!t.length)return null;return{resources:t,path:e.path||"/",maxURL:e.maxURL||500,rotate:e.rotate||750,timeout:e.timeout||5e3,random:e.random===!0,index:e.index||0,dataAfterTimeout:e.dataAfterTimeout!==!1}}const lp=Object.create(null),zo=["https://api.simplesvg.com","https://api.unisvg.com"],Gs=[];for(;zo.length>0;)zo.length===1||Math.random()>.5?Gs.push(zo.shift()):Gs.push(zo.pop());lp[""]=ap({resources:["https://api.iconify.design"].concat(Gs)});function gD(e,t){const n=ap(t);return n===null?!1:(lp[e]=n,!0)}function up(e){return lp[e]}const yD=()=>{let e;try{if(e=fetch,typeof e=="function")return e}catch{}};let Ug=yD();function vD(e,t){const n=up(e);if(!n)return 0;let r;if(!n.maxURL)r=0;else{let o=0;n.resources.forEach(s=>{o=Math.max(o,s.length)});const i=t+".json?icons=";r=n.maxURL-o-n.path.length-i.length}return r}function xD(e){return e===404}const wD=(e,t,n)=>{const r=[],o=vD(e,t),i="icons";let s={type:i,provider:e,prefix:t,icons:[]},a=0;return n.forEach((l,u)=>{a+=l.length+1,a>=o&&u>0&&(r.push(s),s={type:i,provider:e,prefix:t,icons:[]},a=l.length),s.icons.push(l)}),r.push(s),r};function bD(e){if(typeof e=="string"){const t=up(e);if(t)return t.path}return"/"}const SD=(e,t,n)=>{if(!Ug){n("abort",424);return}let r=bD(t.provider);switch(t.type){case"icons":{const i=t.prefix,a=t.icons.join(","),l=new URLSearchParams({icons:a});r+=i+".json?"+l.toString();break}case"custom":{const i=t.uri;r+=i.slice(0,1)==="/"?i.slice(1):i;break}default:n("abort",400);return}let o=503;Ug(e+r).then(i=>{const s=i.status;if(s!==200){setTimeout(()=>{n(xD(s)?"abort":"next",s)});return}return o=501,i.json()}).then(i=>{if(typeof i!="object"||i===null){setTimeout(()=>{i===404?n("abort",i):n("next",o)});return}setTimeout(()=>{n("success",i)})}).catch(()=>{n("next",o)})},PD={prepare:wD,send:SD};function _D(e){const t={loaded:[],missing:[],pending:[]},n=Object.create(null);e.sort((o,i)=>o.provider!==i.provider?o.provider.localeCompare(i.provider):o.prefix!==i.prefix?o.prefix.localeCompare(i.prefix):o.name.localeCompare(i.name));let r={provider:"",prefix:"",name:""};return e.forEach(o=>{if(r.name===o.name&&r.prefix===o.prefix&&r.provider===o.provider)return;r=o;const i=o.provider,s=o.prefix,a=o.name,l=n[i]||(n[i]=Object.create(null)),u=l[s]||(l[s]=dr(i,s));let c;a in u.icons?c=t.loaded:s===""||u.missing.has(a)?c=t.missing:c=t.pending;const f={provider:i,prefix:s,name:a};c.push(f)}),t}function mb(e,t){e.forEach(n=>{const r=n.loaderCallbacks;r&&(n.loaderCallbacks=r.filter(o=>o.id!==t))})}function ED(e){e.pendingCallbacksFlag||(e.pendingCallbacksFlag=!0,setTimeout(()=>{e.pendingCallbacksFlag=!1;const t=e.loaderCallbacks?e.loaderCallbacks.slice(0):[];if(!t.length)return;let n=!1;const r=e.provider,o=e.prefix;t.forEach(i=>{const s=i.icons,a=s.pending.length;s.pending=s.pending.filter(l=>{if(l.prefix!==o)return!0;const u=l.name;if(e.icons[u])s.loaded.push({provider:r,prefix:o,name:u});else if(e.missing.has(u))s.missing.push({provider:r,prefix:o,name:u});else return n=!0,!0;return!1}),s.pending.length!==a&&(n||mb([e],i.id),i.callback(s.loaded.slice(0),s.missing.slice(0),s.pending.slice(0),i.abort))})}))}let CD=0;function TD(e,t,n){const r=CD++,o=mb.bind(null,n,r);if(!t.pending.length)return o;const i={id:r,icons:t,callback:e,abort:o};return n.forEach(s=>{(s.loaderCallbacks||(s.loaderCallbacks=[])).push(i)}),o}function kD(e,t=!0,n=!1){const r=[];return e.forEach(o=>{const i=typeof o=="string"?gl(o,t,n):o;i&&r.push(i)}),r}var jD={resources:[],index:0,timeout:2e3,rotate:750,random:!1,dataAfterTimeout:!1};function OD(e,t,n,r){const o=e.resources.length,i=e.random?Math.floor(Math.random()*o):e.index;let s;if(e.random){let _=e.resources.slice(0);for(s=[];_.length>1;){const E=Math.floor(Math.random()*_.length);s.push(_[E]),_=_.slice(0,E).concat(_.slice(E+1))}s=s.concat(_)}else s=e.resources.slice(i).concat(e.resources.slice(0,i));const a=Date.now();let l="pending",u=0,c,f=null,d=[],p=[];typeof r=="function"&&p.push(r);function w(){f&&(clearTimeout(f),f=null)}function v(){l==="pending"&&(l="aborted"),w(),d.forEach(_=>{_.status==="pending"&&(_.status="aborted")}),d=[]}function b(_,E){E&&(p=[]),typeof _=="function"&&p.push(_)}function h(){return{startTime:a,payload:t,status:l,queriesSent:u,queriesPending:d.length,subscribe:b,abort:v}}function g(){l="failed",p.forEach(_=>{_(void 0,c)})}function x(){d.forEach(_=>{_.status==="pending"&&(_.status="aborted")}),d=[]}function S(_,E,C){const O=E!=="success";switch(d=d.filter(j=>j!==_),l){case"pending":break;case"failed":if(O||!e.dataAfterTimeout)return;break;default:return}if(E==="abort"){c=C,g();return}if(O){c=C,d.length||(s.length?P():g());return}if(w(),x(),!e.random){const j=e.resources.indexOf(_.resource);j!==-1&&j!==e.index&&(e.index=j)}l="completed",p.forEach(j=>{j(C)})}function P(){if(l!=="pending")return;w();const _=s.shift();if(_===void 0){if(d.length){f=setTimeout(()=>{w(),l==="pending"&&(x(),g())},e.timeout);return}g();return}const E={status:"pending",resource:_,callback:(C,O)=>{S(E,C,O)}};d.push(E),u++,f=setTimeout(P,e.rotate),n(_,t,E.callback)}return setTimeout(P),h}function gb(e){const t={...jD,...e};let n=[];function r(){n=n.filter(a=>a().status==="pending")}function o(a,l,u){const c=OD(t,a,l,(f,d)=>{r(),u&&u(f,d)});return n.push(c),c}function i(a){return n.find(l=>a(l))||null}return{query:o,find:i,setIndex:a=>{t.index=a},getIndex:()=>t.index,cleanup:r}}function Wg(){}const Ou=Object.create(null);function AD(e){if(!Ou[e]){const t=up(e);if(!t)return;const n=gb(t),r={config:t,redundancy:n};Ou[e]=r}return Ou[e]}function RD(e,t,n){let r,o;if(typeof e=="string"){const i=af(e);if(!i)return n(void 0,424),Wg;o=i.send;const s=AD(e);s&&(r=s.redundancy)}else{const i=ap(e);if(i){r=gb(i);const s=e.resources?e.resources[0]:"",a=af(s);a&&(o=a.send)}}return!r||!o?(n(void 0,424),Wg):r.query(t,o,n)().abort}const Hg="iconify2",Mi="iconify",yb=Mi+"-count",Kg=Mi+"-version",vb=36e5,MD=168,ND=50;function lf(e,t){try{return e.getItem(t)}catch{}}function cp(e,t,n){try{return e.setItem(t,n),!0}catch{}}function Gg(e,t){try{e.removeItem(t)}catch{}}function uf(e,t){return cp(e,yb,t.toString())}function cf(e){return parseInt(lf(e,yb))||0}const yl={local:!0,session:!0},xb={local:new Set,session:new Set};let fp=!1;function LD(e){fp=e}let _s=typeof window>"u"?{}:window;function wb(e){const t=e+"Storage";try{if(_s&&_s[t]&&typeof _s[t].length=="number")return _s[t]}catch{}yl[e]=!1}function bb(e,t){const n=wb(e);if(!n)return;const r=lf(n,Kg);if(r!==Hg){if(r){const a=cf(n);for(let l=0;l<a;l++)Gg(n,Mi+l.toString())}cp(n,Kg,Hg),uf(n,0);return}const o=Math.floor(Date.now()/vb)-MD,i=a=>{const l=Mi+a.toString(),u=lf(n,l);if(typeof u=="string"){try{const c=JSON.parse(u);if(typeof c=="object"&&typeof c.cached=="number"&&c.cached>o&&typeof c.provider=="string"&&typeof c.data=="object"&&typeof c.data.prefix=="string"&&t(c,a))return!0}catch{}Gg(n,l)}};let s=cf(n);for(let a=s-1;a>=0;a--)i(a)||(a===s-1?(s--,uf(n,s)):xb[e].add(a))}function Sb(){if(!fp){LD(!0);for(const e in yl)bb(e,t=>{const n=t.data,r=t.provider,o=n.prefix,i=dr(r,o);if(!sp(i,n).length)return!1;const s=n.lastModified||-1;return i.lastModifiedCached=i.lastModifiedCached?Math.min(i.lastModifiedCached,s):s,!0})}}function DD(e,t){const n=e.lastModifiedCached;if(n&&n>=t)return n===t;if(e.lastModifiedCached=t,n)for(const r in yl)bb(r,o=>{const i=o.data;return o.provider!==e.provider||i.prefix!==e.prefix||i.lastModified===t});return!0}function ID(e,t){fp||Sb();function n(r){let o;if(!yl[r]||!(o=wb(r)))return;const i=xb[r];let s;if(i.size)i.delete(s=Array.from(i).shift());else if(s=cf(o),s>=ND||!uf(o,s+1))return;const a={cached:Math.floor(Date.now()/vb),provider:e.provider,data:t};return cp(o,Mi+s.toString(),JSON.stringify(a))}t.lastModified&&!DD(e,t.lastModified)||Object.keys(t.icons).length&&(t.not_found&&(t=Object.assign({},t),delete t.not_found),n("local")||n("session"))}function Yg(){}function VD(e){e.iconsLoaderFlag||(e.iconsLoaderFlag=!0,setTimeout(()=>{e.iconsLoaderFlag=!1,ED(e)}))}function $D(e,t){e.iconsToLoad?e.iconsToLoad=e.iconsToLoad.concat(t).sort():e.iconsToLoad=t,e.iconsQueueFlag||(e.iconsQueueFlag=!0,setTimeout(()=>{e.iconsQueueFlag=!1;const{provider:n,prefix:r}=e,o=e.iconsToLoad;delete e.iconsToLoad;let i;if(!o||!(i=af(n)))return;i.prepare(n,r,o).forEach(a=>{RD(n,a,l=>{if(typeof l!="object")a.icons.forEach(u=>{e.missing.add(u)});else try{const u=sp(e,l);if(!u.length)return;const c=e.pendingIcons;c&&u.forEach(f=>{c.delete(f)}),ID(e,l)}catch(u){console.error(u)}VD(e)})})}))}const FD=(e,t)=>{const n=kD(e,!0,db()),r=_D(n);if(!r.pending.length){let l=!0;return t&&setTimeout(()=>{l&&t(r.loaded,r.missing,r.pending,Yg)}),()=>{l=!1}}const o=Object.create(null),i=[];let s,a;return r.pending.forEach(l=>{const{provider:u,prefix:c}=l;if(c===a&&u===s)return;s=u,a=c,i.push(dr(u,c));const f=o[u]||(o[u]=Object.create(null));f[c]||(f[c]=[])}),r.pending.forEach(l=>{const{provider:u,prefix:c,name:f}=l,d=dr(u,c),p=d.pendingIcons||(d.pendingIcons=new Set);p.has(f)||(p.add(f),o[u][c].push(f))}),i.forEach(l=>{const{provider:u,prefix:c}=l;o[u][c].length&&$D(l,o[u][c])}),t?TD(t,r,i):Yg};function zD(e,t){const n={...e};for(const r in t){const o=t[r],i=typeof o;r in pb?(o===null||o&&(i==="string"||i==="number"))&&(n[r]=o):i===typeof n[r]&&(n[r]=r==="rotate"?o%4:o)}return n}const BD=/[\s,]+/;function UD(e,t){t.split(BD).forEach(n=>{switch(n.trim()){case"horizontal":e.hFlip=!0;break;case"vertical":e.vFlip=!0;break}})}function WD(e,t=0){const n=e.replace(/^-?[0-9.]*/,"");function r(o){for(;o<0;)o+=4;return o%4}if(n===""){const o=parseInt(e);return isNaN(o)?0:r(o)}else if(n!==e){let o=0;switch(n){case"%":o=25;break;case"deg":o=90}if(o){let i=parseFloat(e.slice(0,e.length-n.length));return isNaN(i)?0:(i=i/o,i%1===0?r(i):0)}}return t}function HD(e,t){let n=e.indexOf("xlink:")===-1?"":' xmlns:xlink="http://www.w3.org/1999/xlink"';for(const r in t)n+=" "+r+'="'+t[r]+'"';return'<svg xmlns="http://www.w3.org/2000/svg"'+n+">"+e+"</svg>"}function KD(e){return e.replace(/"/g,"'").replace(/%/g,"%25").replace(/#/g,"%23").replace(/</g,"%3C").replace(/>/g,"%3E").replace(/\s+/g," ")}function GD(e){return"data:image/svg+xml,"+KD(e)}function YD(e){return'url("'+GD(e)+'")'}let ui;function XD(){try{ui=window.trustedTypes.createPolicy("iconify",{createHTML:e=>e})}catch{ui=null}}function QD(e){return ui===void 0&&XD(),ui?ui.createHTML(e):e}const Pb={...hb,inline:!1},ZD={xmlns:"http://www.w3.org/2000/svg",xmlnsXlink:"http://www.w3.org/1999/xlink","aria-hidden":!0,role:"img"},qD={display:"inline-block"},ff={backgroundColor:"currentColor"},_b={backgroundColor:"transparent"},Xg={Image:"var(--svg)",Repeat:"no-repeat",Size:"100% 100%"},Qg={WebkitMask:ff,mask:ff,background:_b};for(const e in Qg){const t=Qg[e];for(const n in Xg)t[e+n]=Xg[n]}const JD={...Pb,inline:!0};function Zg(e){return e+(e.match(/^[-0-9.]+$/)?"px":"")}const eI=(e,t,n)=>{const r=t.inline?JD:Pb,o=zD(r,t),i=t.mode||"svg",s={},a=t.style||{},l={...i==="svg"?ZD:{}};if(n){const b=gl(n,!1,!0);if(b){const h=["iconify"],g=["provider","prefix"];for(const x of g)b[x]&&h.push("iconify--"+b[x]);l.className=h.join(" ")}}for(let b in t){const h=t[b];if(h!==void 0)switch(b){case"icon":case"style":case"children":case"onLoad":case"mode":case"ssr":break;case"_ref":l.ref=h;break;case"className":l[b]=(l[b]?l[b]+" ":"")+h;break;case"inline":case"hFlip":case"vFlip":o[b]=h===!0||h==="true"||h===1;break;case"flip":typeof h=="string"&&UD(o,h);break;case"color":s.color=h;break;case"rotate":typeof h=="string"?o[b]=WD(h):typeof h=="number"&&(o[b]=h);break;case"ariaHidden":case"aria-hidden":h!==!0&&h!=="true"&&delete l["aria-hidden"];break;default:r[b]===void 0&&(l[b]=h)}}const u=cD(e,o),c=u.attributes;if(o.inline&&(s.verticalAlign="-0.125em"),i==="svg"){l.style={...s,...a},Object.assign(l,c);let b=0,h=t.id;return typeof h=="string"&&(h=h.replace(/-/g,"_")),l.dangerouslySetInnerHTML={__html:QD(hD(u.body,h?()=>h+"ID"+b++:"iconifyReact"))},m.createElement("svg",l)}const{body:f,width:d,height:p}=e,w=i==="mask"||(i==="bg"?!1:f.indexOf("currentColor")!==-1),v=HD(f,{...c,width:d+"",height:p+""});return l.style={...s,"--svg":YD(v),width:Zg(c.width),height:Zg(c.height),...qD,...w?ff:_b,...a},m.createElement("span",l)};db(!0);mD("",PD);if(typeof document<"u"&&typeof window<"u"){Sb();const e=window;if(e.IconifyPreload!==void 0){const t=e.IconifyPreload,n="Invalid IconifyPreload syntax.";typeof t=="object"&&t!==null&&(t instanceof Array?t:[t]).forEach(r=>{try{(typeof r!="object"||r===null||r instanceof Array||typeof r.icons!="object"||typeof r.prefix!="string"||!rD(r))&&console.error(n)}catch{console.error(n)}})}if(e.IconifyProviders!==void 0){const t=e.IconifyProviders;if(typeof t=="object"&&t!==null)for(let n in t){const r="IconifyProviders["+n+"] is invalid.";try{const o=t[n];if(typeof o!="object"||!o||o.resources===void 0)continue;gD(n,o)||console.error(r)}catch{console.error(r)}}}}function Eb(e){const[t,n]=m.useState(!!e.ssr),[r,o]=m.useState({});function i(p){if(p){const w=e.icon;if(typeof w=="object")return{name:"",data:w};const v=zg(w);if(v)return{name:w,data:v}}return{name:""}}const[s,a]=m.useState(i(!!e.ssr));function l(){const p=r.callback;p&&(p(),o({}))}function u(p){if(JSON.stringify(s)!==JSON.stringify(p))return l(),a(p),!0}function c(){var p;const w=e.icon;if(typeof w=="object"){u({name:"",data:w});return}const v=zg(w);if(u({name:w,data:v}))if(v===void 0){const b=FD([w],c);o({callback:b})}else v&&((p=e.onLoad)===null||p===void 0||p.call(e,w))}m.useEffect(()=>(n(!0),l),[]),m.useEffect(()=>{t&&c()},[e.icon,t]);const{name:f,data:d}=s;return d?eI({...ip,...d},e,f):e.children?e.children:m.createElement("span",{})}m.forwardRef((e,t)=>Eb({...e,_ref:t}));m.forwardRef((e,t)=>Eb({inline:!0,...e,_ref:t}));function ka(e){return y.jsx(kt,{...e,size:"lg",variant:"outline",className:de("h-12 bg-[url(/button-bg.webp)] bg-cover bg-center border-none px-12 leading-none",e.className)})}
 function ja({ onClick, children }) {
-  return y.jsx("button", { type: "button", className: "game-button game-button--primary", onClick, children });
+  return y.jsx("button", { type: "button", className: "game-button game-button--primary", "data-sound": "cloth", onClick, children });
 }
 function _t({ onCallback, direction = "right" }) {
+  const { playEffect } = m.useContext(gameSession);
+  const scene = D().current;
+  function complete() {
+    playEffect(["p35", "p36", "p38"].includes(scene) ? "water" : "chime");
+    onCallback?.();
+  }
   const [progress, setProgress] = m.useState(0);
   const drag = m.useRef(null);
   const horizontal = direction === "left" || direction === "right";
   const sign = direction === "left" || direction === "top" ? -1 : 1;
   const labels = {
-    left: ["向左拖动", "ArrowLeft", "←"],
-    right: ["向右拖动", "ArrowRight", "→"],
-    top: ["向上拖动", "ArrowUp", "↑"],
-    bottom: ["向下拖动", "ArrowDown", "↓"]
+    left: ["Slide left", "向左拖动", "ArrowLeft", "←"],
+    right: ["Slide right", "向右拖动", "ArrowRight", "→"],
+    top: ["Slide up", "向上拖动", "ArrowUp", "↑"],
+    bottom: ["Slide down", "向下拖动", "ArrowDown", "↓"]
   };
-  const [label, key, arrow] = labels[direction];
+  const [english, chinese, key, arrow] = labels[direction];
   const coordinate = event => horizontal ? event.clientX : event.clientY;
 
   function begin(event) {
@@ -849,6 +994,7 @@ function _t({ onCallback, direction = "right" }) {
       value: 0
     };
     event.currentTarget.setPointerCapture(event.pointerId);
+    playEffect("cloth");
     setProgress(0);
   }
 
@@ -863,17 +1009,18 @@ function _t({ onCallback, direction = "right" }) {
     const active = drag.current;
     if (active?.id !== event.pointerId) return;
     drag.current = null;
-    if (event.type === "pointerup" && active.value >= 90) onCallback?.();
+    if (event.type === "pointerup" && active.value >= 90) complete();
     else setProgress(0);
   }
 
   return y.jsxs("div", {
     className: "game-gesture",
     children: [
-      y.jsx("span", { className: "game-gesture__hint", children: label }),
+      y.jsx("span", { className: "game-gesture__hint", children: gameWords(english, chinese) }),
       y.jsx("div", {
         className: "game-drag",
-        tabIndex: 0, role: "slider", "aria-label": label, "aria-valuenow": progress,
+        tabIndex: 0, role: "slider", "aria-label": gameLabel(english, chinese), "aria-valuenow": progress,
+        "aria-keyshortcuts": key,
         "aria-valuemin": 0, "aria-valuemax": 100, "aria-orientation": horizontal ? "horizontal" : "vertical",
         "data-direction": direction, style: { "--drag-progress": progress / 100 },
         onPointerDown: begin, onPointerMove: move, onPointerUp: end, onPointerCancel: end, onLostPointerCapture: end,
@@ -882,7 +1029,7 @@ function _t({ onCallback, direction = "right" }) {
           event.preventDefault();
           const next = Math.min(100, progress + 25);
           setProgress(next);
-          if (next === 100) onCallback?.();
+          if (next === 100) complete();
         },
         children: y.jsx("span", { "aria-hidden": true, children: arrow })
       })
@@ -891,6 +1038,7 @@ function _t({ onCallback, direction = "right" }) {
 }
 
 function dp({ duration = 1200, onCallback }) {
+  const { playEffect } = m.useContext(gameSession);
   const [progress, setProgress] = m.useState(0);
   const frame = m.useRef(null);
   const callback = m.useRef(onCallback);
@@ -905,12 +1053,14 @@ function dp({ duration = 1200, onCallback }) {
 
   function begin() {
     if (frame.current !== null) return;
+    playEffect("cloth");
     const start = performance.now();
     function tick(now) {
       const percent = Math.min(100, Math.round((now - start) / duration * 100));
       setProgress(percent);
       if (percent >= 100) {
         frame.current = null;
+        playEffect("chime");
         callback.current?.();
       } else {
         frame.current = requestAnimationFrame(tick);
@@ -922,9 +1072,10 @@ function dp({ duration = 1200, onCallback }) {
   return y.jsxs("div", {
     className: "game-gesture",
     children: [
-      y.jsx("span", { className: "game-gesture__hint", children: "按住直到进度填满" }),
+      y.jsx("span", { className: "game-gesture__hint", children: gameWords("Hold until the ring fills", "按住直到进度填满") }),
       y.jsx("button", {
-        className: "game-wheel game-hold", type: "button", "aria-label": "按住蓄力",
+        className: "game-wheel game-hold", type: "button", "aria-label": gameLabel("Press and hold", "按住蓄力"),
+        "data-sound": "none",
         style: { "--gesture-progress": `${progress}%` },
         onPointerDown: event => {
           if (!event.isPrimary || event.button !== 0) return;
@@ -950,6 +1101,8 @@ function dp({ duration = 1200, onCallback }) {
 }
 
 function Qi({ rotate = 360, disabled, onCallback }) {
+  const { playEffect } = m.useContext(gameSession);
+  const stirring = D().current === "p37";
   const [rotation, setRotation] = m.useState(0);
   const accumulated = m.useRef(0);
   const gesture = m.useRef(null);
@@ -959,7 +1112,10 @@ function Qi({ rotate = 360, disabled, onCallback }) {
     if (accumulated.current >= rotate) return;
     accumulated.current = Math.min(rotate, Math.max(0, accumulated.current + delta));
     setRotation(accumulated.current);
-    if (accumulated.current >= rotate) onCallback?.();
+    if (accumulated.current >= rotate) {
+      playEffect(stirring ? "water" : "chime");
+      onCallback?.();
+    }
   }
 
   function begin(event) {
@@ -968,6 +1124,7 @@ function Qi({ rotate = 360, disabled, onCallback }) {
     const center = { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
     gesture.current = { id: event.pointerId, center, angle: angle(event, center) };
     event.currentTarget.setPointerCapture(event.pointerId);
+    playEffect(stirring ? "water" : "wood");
   }
 
   function move(event) {
@@ -986,10 +1143,10 @@ function Qi({ rotate = 360, disabled, onCallback }) {
   return y.jsxs("div", {
     className: "game-gesture",
     children: [
-      y.jsx("span", { className: "game-gesture__hint", children: "沿圆环顺时针转一圈" }),
+      y.jsx("span", { className: "game-gesture__hint", children: gameWords("Turn the ring clockwise", "沿圆环顺时针转一圈") }),
       y.jsx("div", {
         className: "game-wheel", tabIndex: disabled ? -1 : 0, role: "slider",
-        "aria-label": "顺时针旋转", "aria-valuenow": Math.round(rotation), "aria-valuemin": 0, "aria-valuemax": rotate,
+        "aria-label": gameLabel("Turn clockwise", "顺时针旋转"), "aria-keyshortcuts": "ArrowRight", "aria-valuenow": Math.round(rotation), "aria-valuemin": 0, "aria-valuemax": rotate,
         style: { "--gesture-progress": `${rotation / rotate * 100}%` },
         onPointerDown: begin, onPointerMove: move, onPointerUp: end, onPointerCancel: end, onLostPointerCapture: end,
         onKeyDown: event => {
@@ -1009,12 +1166,12 @@ function Cb() {
   return y.jsx("button", {
     type: "button", className: "game-button game-button--primary game-challenge",
     onClick: () => setClicks(count => count + 1),
-    children: clicks ? `已连点 ${clicks} 次` : "快速连点"
+    children: clicks ? gameWords(`${clicks} ${clicks === 1 ? "tap" : "taps"}`, `已连点 ${clicks} 次`) : gameWords("Tap quickly", "快速连点")
   });
 }
 
 function Tb({ timeout }) {
-  return y.jsx("span", { className: "game-gesture__hint", children: `连点挑战将在 ${timeout} 秒后开始` });
+  return y.jsx("span", { className: "game-gesture__hint", children: gameWords(`Get ready · ${timeout}s`, `连点挑战将在 ${timeout} 秒后开始`) });
 }
 const oI={name:"天降飞贼",nexts:["p3","p4"]};
 function iI() {
@@ -1024,8 +1181,8 @@ function iI() {
     video: {
       url: "https://kompass.oss-cn-beijing.aliyuncs.com/videos/2.mp4", playing: true,
       children: [
-        { key: "p3", position: { left: 510, bottom: 144 }, component: y.jsx(ja, { onClick: () => holder.push("p3"), children: "继续追" }) },
-        { key: "p4", position: { right: 510, bottom: 144 }, component: y.jsx(ja, { onClick: () => holder.push("p4"), children: "抄小道" }) }
+        { key: "p3", position: { left: 510, bottom: 144 }, component: y.jsx(ja, { onClick: () => holder.push("p3"), children: gameWords("Keep chasing", "继续追") }) },
+        { key: "p4", position: { right: 510, bottom: 144 }, component: y.jsx(ja, { onClick: () => holder.push("p4"), children: gameWords("Take the shortcut", "抄小道") }) }
       ]
     }
   });
@@ -1043,7 +1200,7 @@ function ZI() {
         {
           key: "materials", position: { right: 64, bottom: 56 }, visible: () => true,
           component: y.jsx("button", {
-            type: "button", className: "game-button", onClick: () => holder.push("p37-1"), children: "了解制染原料"
+            type: "button", className: "game-button", onClick: () => holder.push("p37-1"), "data-sound": "water", children: gameWords("Discover indigo dye", "了解制染原料")
           })
         }
       ]
@@ -1052,46 +1209,58 @@ function ZI() {
 }
 const qI=Object.freeze(Object.defineProperty({__proto__:null,default:ZI,opts:QI},Symbol.toStringTag,{value:"Module"})),JI={name:"丢入染缸",nexts:["p37"]};function e4(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/36.mp4",playing:!0,children:[{key:"p36",position:{right:660,top:360},component:y.jsx(_t,{size:280,direction:"bottom",onCallback:()=>e.next()})}]}})}const t4=Object.freeze(Object.defineProperty({__proto__:null,default:e4,opts:JI},Symbol.toStringTag,{value:"Module"})),n4={name:"用水浸泡",nexts:["p36"]};function r4(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/35.mp4",playing:!0,children:[{key:"p36",position:{right:660,top:360},component:y.jsx(_t,{size:280,direction:"bottom",onCallback:()=>e.next()})}]}})}const o4=Object.freeze(Object.defineProperty({__proto__:null,default:r4,opts:n4},Symbol.toStringTag,{value:"Module"})),i4={name:"来到染房",nexts:["p35"]};function s4(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/34.mp4",playing:!0,children:[{key:"p8",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:()=>e.next()})}]}})}const a4=Object.freeze(Object.defineProperty({__proto__:null,default:s4,opts:i4},Symbol.toStringTag,{value:"Module"})),l4={name:"抢嘴里的",nexts:["p12"],condition:e=>e.next==="p10"};function u4(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/10.mp4",playing:!0,children:[{key:"p12",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:()=>e.next()})}]}})}const c4=Object.freeze(Object.defineProperty({__proto__:null,default:u4,opts:l4},Symbol.toStringTag,{value:"Module"})),f4={name:"等老师回来",nexts:["p12"],condition:e=>e.next==="p11"};function d4(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/11.mp4",playing:!0,onEnded:()=>e.next()}})}const p4=Object.freeze(Object.defineProperty({__proto__:null,default:d4,opts:f4},Symbol.toStringTag,{value:"Module"})),h4={name:"螺旋纹的展示",nexts:[]};function m4(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/19.mp4",playing:!0,children:[{key:"p8",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:()=>e.pushAndStore("p8",void 0,{data:"螺旋纹"})})}]}})}const g4=Object.freeze(Object.defineProperty({__proto__:null,default:m4,opts:h4},Symbol.toStringTag,{value:"Module"})),y4={name:"拿起皮筋绑麻布(下)",nexts:["p19"]};function v4(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/18.mp4",playing:!0,children:[{key:"p19",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:()=>e.next()})}]}})}const x4=Object.freeze(Object.defineProperty({__proto__:null,default:v4,opts:y4},Symbol.toStringTag,{value:"Module"})),w4={name:"拿起皮筋绑麻布(上)",nexts:["p18"]};function b4(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/17.mp4",playing:!0,children:[{key:"p18",position:{right:700,top:200},component:y.jsx(Qi,{onCallback:()=>e.next()})}]}})}const S4=Object.freeze(Object.defineProperty({__proto__:null,default:b4,opts:w4},Symbol.toStringTag,{value:"Module"})),P4={name:"旋转木棍",nexts:["p17"]};function _4(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/16.mp4",playing:!0,children:[{key:"p17",position:{right:650,bottom:460},component:y.jsx(Qi,{onCallback:()=>e.next()})}]}})}const E4=Object.freeze(Object.defineProperty({__proto__:null,default:_4,opts:P4},Symbol.toStringTag,{value:"Module"})),C4={name:"立柱木棍，抵住麻布",nexts:["p16"]};function T4(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/15.mp4",playing:!0,children:[{key:"p16",position:{left:1e3,top:300},component:y.jsx(dp,{size:108,duration:2e3,title:"Long press for 2s",onCallback:()=>e.next()})}]}})}const k4=Object.freeze(Object.defineProperty({__proto__:null,default:T4,opts:C4},Symbol.toStringTag,{value:"Module"})),j4={name:"平铺麻布",nexts:["p15"],condition:e=>e.next==="p14"};function O4(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/14.mp4",playing:!0,children:[{key:"p15",position:{left:460,bottom:600},component:y.jsx(_t,{size:280,onCallback:()=>e.next()})}]}})}const A4=Object.freeze(Object.defineProperty({__proto__:null,default:O4,opts:j4},Symbol.toStringTag,{value:"Module"})),R4={name:"鱼鳞纹的展示",nexts:[]};function M4(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/23.mp4",playing:!0,children:[{key:"p8",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:()=>e.pushAndStore("p8",void 0,{data:"鱼鳞纹"})})}]}})}const N4=Object.freeze(Object.defineProperty({__proto__:null,default:M4,opts:R4},Symbol.toStringTag,{value:"Module"})),L4={name:"扎紧绳子打活结",nexts:["p23"]};function D4(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/22.mp4",playing:!0,children:[{key:"p23",position:{right:660,top:360},component:y.jsx(_t,{size:280,direction:"right",onCallback:()=>e.next()})}]}})}const I4=Object.freeze(Object.defineProperty({__proto__:null,default:D4,opts:L4},Symbol.toStringTag,{value:"Module"})),V4={name:"抽紧丝巾",nexts:["p22"]};function $4(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/21.mp4",playing:!0,children:[{key:"p22",position:{left:1e3,top:300},component:y.jsx(dp,{size:108,duration:2e3,title:"Long press for 2s",onCallback:()=>e.next()})}]}})}const F4=Object.freeze(Object.defineProperty({__proto__:null,default:$4,opts:V4},Symbol.toStringTag,{value:"Module"})),z4={name:"用丝巾卷绳子",nexts:["p21"],condition:e=>e.next==="p20"};function B4(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/20.mp4",playing:!0,children:[{key:"p21",position:{left:660,bottom:600},component:y.jsx(_t,{size:280,direction:"top",onCallback:()=>e.next()})}]}})}const U4=Object.freeze(Object.defineProperty({__proto__:null,default:B4,opts:z4},Symbol.toStringTag,{value:"Module"})),W4={name:"棱形纹的展示",nexts:[]};function H4(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/29.mp4",playing:!0,children:[{key:"p8",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:()=>e.pushAndStore("p8",void 0,{data:"棱形纹"})})}]}})}const K4=Object.freeze(Object.defineProperty({__proto__:null,default:H4,opts:W4},Symbol.toStringTag,{value:"Module"})),G4={name:"拆方巾",nexts:["p29"]};function Y4(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/28.mp4",playing:!0,children:[{key:"p28",position:{right:660,top:360},component:y.jsx(_t,{size:280,direction:"right",onCallback:()=>e.next()})}]}})}const X4=Object.freeze(Object.defineProperty({__proto__:null,default:Y4,opts:G4},Symbol.toStringTag,{value:"Module"})),Q4={name:"捆方巾",nexts:["p28"]};function Z4(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/27.mp4",playing:!0,children:[{key:"p28",position:{right:650,bottom:460},component:y.jsx(Qi,{onCallback:()=>e.next()})}]}})}const q4=Object.freeze(Object.defineProperty({__proto__:null,default:Z4,opts:Q4},Symbol.toStringTag,{value:"Module"})),J4={name:"夹方巾",nexts:["p27"]};function e3(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/26.mp4",playing:!0,children:[{key:"p27",position:{right:750,bottom:400},component:y.jsx(dp,{size:108,duration:3e3,title:"Long press for 3s",onCallback:()=>e.next()})}]}})}const t3=Object.freeze(Object.defineProperty({__proto__:null,default:e3,opts:J4},Symbol.toStringTag,{value:"Module"})),n3={name:"折方巾",nexts:["p26"]};function r3(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/25.mp4",playing:!0,children:[{key:"p26",position:{right:660,top:360},component:y.jsx(_t,{size:280,direction:"top",onCallback:()=>e.next()})}]}})}const o3=Object.freeze(Object.defineProperty({__proto__:null,default:r3,opts:n3},Symbol.toStringTag,{value:"Module"})),i3={name:"叠方巾",nexts:["p25"],condition:e=>e.next==="p24"};function s3(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/24.mp4",playing:!0,children:[{key:"p25",position:{right:700,top:360},component:y.jsx(_t,{size:280,direction:"top",onCallback:()=>e.next()})}]}})}const a3=Object.freeze(Object.defineProperty({__proto__:null,default:s3,opts:i3},Symbol.toStringTag,{value:"Module"})),l3={name:"包物扎的展示",nexts:[]};function u3(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/33.mp4",playing:!0,children:[{key:"p8",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:()=>e.pushAndStore("p8",void 0,{data:"包物扎"})})}]}})}const c3=Object.freeze(Object.defineProperty({__proto__:null,default:u3,opts:l3},Symbol.toStringTag,{value:"Module"})),f3={name:"拆皮筋",nexts:["p33"]};function d3(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/32.mp4",playing:!0,children:[{key:"p31",position:{right:660,top:360},component:y.jsx(_t,{size:280,direction:"right",onCallback:()=>e.next()})}]}})}const p3=Object.freeze(Object.defineProperty({__proto__:null,default:d3,opts:f3},Symbol.toStringTag,{value:"Module"})),h3={name:"捆石子",nexts:["p32"]};function m3(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/31.mp4",playing:!0,children:[{key:"p32",position:{right:650,bottom:460},component:y.jsx(Qi,{onCallback:()=>e.next()})}]}})}const g3=Object.freeze(Object.defineProperty({__proto__:null,default:m3,opts:h3},Symbol.toStringTag,{value:"Module"})),y3={name:"装石子",nexts:["p31"],condition:e=>e.next==="p30"};function v3(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/30.mp4",playing:!0,children:[{key:"p31",position:{right:660,top:360},component:y.jsx(_t,{size:280,direction:"bottom",onCallback:()=>e.next()})}]}})}const x3=Object.freeze(Object.defineProperty({__proto__:null,default:v3,opts:y3},Symbol.toStringTag,{value:"Module"}));function Ut(e,t,{checkForDefaultPrevented:n=!0}={}){return function(o){if(e==null||e(o),n===!1||!o.defaultPrevented)return t==null?void 0:t(o)}}function qg(e,t){if(typeof e=="function")return e(t);e!=null&&(e.current=t)}function Rb(...e){return t=>{let n=!1;const r=e.map(o=>{const i=qg(o,t);return!n&&typeof i=="function"&&(n=!0),i});if(n)return()=>{for(let o=0;o<r.length;o++){const i=r[o];typeof i=="function"?i():qg(e[o],null)}}}}function xr(...e){return m.useCallback(Rb(...e),e)}var Mb=m.forwardRef((e,t)=>{const{children:n,...r}=e,o=m.Children.toArray(n),i=o.find(w3);if(i){const s=i.props.children,a=o.map(l=>l===i?m.Children.count(s)>1?m.Children.only(null):m.isValidElement(s)?s.props.children:null:l);return y.jsx(df,{...r,ref:t,children:m.isValidElement(s)?m.cloneElement(s,void 0,a):null})}return y.jsx(df,{...r,ref:t,children:n})});Mb.displayName="Slot";var df=m.forwardRef((e,t)=>{const{children:n,...r}=e;if(m.isValidElement(n)){const o=S3(n);return m.cloneElement(n,{...b3(r,n.props),ref:t?Rb(t,o):o})}return m.Children.count(n)>1?m.Children.only(null):null});df.displayName="SlotClone";var Nb=({children:e})=>y.jsx(y.Fragment,{children:e});function w3(e){return m.isValidElement(e)&&e.type===Nb}function b3(e,t){const n={...t};for(const r in t){const o=e[r],i=t[r];/^on[A-Z]/.test(r)?o&&i?n[r]=(...a)=>{i(...a),o(...a)}:o&&(n[r]=o):r==="style"?n[r]={...o,...i}:r==="className"&&(n[r]=[o,i].filter(Boolean).join(" "))}return{...e,...n}}function S3(e){var r,o;let t=(r=Object.getOwnPropertyDescriptor(e.props,"ref"))==null?void 0:r.get,n=t&&"isReactWarning"in t&&t.isReactWarning;return n?e.ref:(t=(o=Object.getOwnPropertyDescriptor(e,"ref"))==null?void 0:o.get,n=t&&"isReactWarning"in t&&t.isReactWarning,n?e.props.ref:e.props.ref||e.ref)}var P3=["a","button","div","form","h2","h3","img","input","label","li","nav","ol","p","span","svg","ul"],wr=P3.reduce((e,t)=>{const n=m.forwardRef((r,o)=>{const{asChild:i,...s}=r,a=i?Mb:t;return typeof window<"u"&&(window[Symbol.for("radix-ui")]=!0),y.jsx(a,{...s,ref:o})});return n.displayName=`Primitive.${t}`,{...e,[t]:n}},{});function _3(e,t){e&&Bi.flushSync(()=>e.dispatchEvent(t))}var E3="DismissableLayer",pf="dismissableLayer.update",C3="dismissableLayer.pointerDownOutside",T3="dismissableLayer.focusOutside",Jg,Lb=m.createContext({layers:new Set,layersWithOutsidePointerEventsDisabled:new Set,branches:new Set}),Db=m.forwardRef((e,t)=>{const{disableOutsidePointerEvents:n=!1,onEscapeKeyDown:r,onPointerDownOutside:o,onFocusOutside:i,onInteractOutside:s,onDismiss:a,...l}=e,u=m.useContext(Lb),[c,f]=m.useState(null),d=(c==null?void 0:c.ownerDocument)??(globalThis==null?void 0:globalThis.document),[,p]=m.useState({}),w=xr(t,E=>f(E)),v=Array.from(u.layers),[b]=[...u.layersWithOutsidePointerEventsDisabled].slice(-1),h=v.indexOf(b),g=c?v.indexOf(c):-1,x=u.layersWithOutsidePointerEventsDisabled.size>0,S=g>=h,P=O3(E=>{const C=E.target,O=[...u.branches].some(j=>j.contains(C));!S||O||(o==null||o(E),s==null||s(E),E.defaultPrevented||a==null||a())},d),_=A3(E=>{const C=E.target;[...u.branches].some(j=>j.contains(C))||(i==null||i(E),s==null||s(E),E.defaultPrevented||a==null||a())},d);return P1(E=>{g===u.layers.size-1&&(r==null||r(E),!E.defaultPrevented&&a&&(E.preventDefault(),a()))},d),m.useEffect(()=>{if(c)return n&&(u.layersWithOutsidePointerEventsDisabled.size===0&&(Jg=d.body.style.pointerEvents,d.body.style.pointerEvents="none"),u.layersWithOutsidePointerEventsDisabled.add(c)),u.layers.add(c),ey(),()=>{n&&u.layersWithOutsidePointerEventsDisabled.size===1&&(d.body.style.pointerEvents=Jg)}},[c,d,n,u]),m.useEffect(()=>()=>{c&&(u.layers.delete(c),u.layersWithOutsidePointerEventsDisabled.delete(c),ey())},[c,u]),m.useEffect(()=>{const E=()=>p({});return document.addEventListener(pf,E),()=>document.removeEventListener(pf,E)},[]),y.jsx(wr.div,{...l,ref:w,style:{pointerEvents:x?S?"auto":"none":void 0,...e.style},onFocusCapture:Ut(e.onFocusCapture,_.onFocusCapture),onBlurCapture:Ut(e.onBlurCapture,_.onBlurCapture),onPointerDownCapture:Ut(e.onPointerDownCapture,P.onPointerDownCapture)})});Db.displayName=E3;var k3="DismissableLayerBranch",j3=m.forwardRef((e,t)=>{const n=m.useContext(Lb),r=m.useRef(null),o=xr(t,r);return m.useEffect(()=>{const i=r.current;if(i)return n.branches.add(i),()=>{n.branches.delete(i)}},[n.branches]),y.jsx(wr.div,{...e,ref:o})});j3.displayName=k3;function O3(e,t=globalThis==null?void 0:globalThis.document){const n=Nt(e),r=m.useRef(!1),o=m.useRef(()=>{});return m.useEffect(()=>{const i=a=>{if(a.target&&!r.current){let l=function(){Ib(C3,n,u,{discrete:!0})};const u={originalEvent:a};a.pointerType==="touch"?(t.removeEventListener("click",o.current),o.current=l,t.addEventListener("click",o.current,{once:!0})):l()}else t.removeEventListener("click",o.current);r.current=!1},s=window.setTimeout(()=>{t.addEventListener("pointerdown",i)},0);return()=>{window.clearTimeout(s),t.removeEventListener("pointerdown",i),t.removeEventListener("click",o.current)}},[t,n]),{onPointerDownCapture:()=>r.current=!0}}function A3(e,t=globalThis==null?void 0:globalThis.document){const n=Nt(e),r=m.useRef(!1);return m.useEffect(()=>{const o=i=>{i.target&&!r.current&&Ib(T3,n,{originalEvent:i},{discrete:!1})};return t.addEventListener("focusin",o),()=>t.removeEventListener("focusin",o)},[t,n]),{onFocusCapture:()=>r.current=!0,onBlurCapture:()=>r.current=!1}}function ey(){const e=new CustomEvent(pf);document.dispatchEvent(e)}function Ib(e,t,n,{discrete:r}){const o=n.originalEvent.target,i=new CustomEvent(e,{bubbles:!1,cancelable:!0,detail:n});t&&o.addEventListener(e,t,{once:!0}),r?_3(o,i):o.dispatchEvent(i)}const R3=["top","right","bottom","left"],In=Math.min,Ze=Math.max,Oa=Math.round,Es=Math.floor,Mt=e=>({x:e,y:e}),M3={left:"right",right:"left",bottom:"top",top:"bottom"},N3={start:"end",end:"start"};function hf(e,t,n){return Ze(e,In(t,n))}function on(e,t){return typeof e=="function"?e(t):e}function sn(e){return e.split("-")[0]}function Po(e){return e.split("-")[1]}function pp(e){return e==="x"?"y":"x"}function hp(e){return e==="y"?"height":"width"}function Vn(e){return["top","bottom"].includes(sn(e))?"y":"x"}function mp(e){return pp(Vn(e))}function L3(e,t,n){n===void 0&&(n=!1);const r=Po(e),o=mp(e),i=hp(o);let s=o==="x"?r===(n?"end":"start")?"right":"left":r==="start"?"bottom":"top";return t.reference[i]>t.floating[i]&&(s=Aa(s)),[s,Aa(s)]}function D3(e){const t=Aa(e);return[mf(e),t,mf(t)]}function mf(e){return e.replace(/start|end/g,t=>N3[t])}function I3(e,t,n){const r=["left","right"],o=["right","left"],i=["top","bottom"],s=["bottom","top"];switch(e){case"top":case"bottom":return n?t?o:r:t?r:o;case"left":case"right":return t?i:s;default:return[]}}function V3(e,t,n,r){const o=Po(e);let i=I3(sn(e),n==="start",r);return o&&(i=i.map(s=>s+"-"+o),t&&(i=i.concat(i.map(mf)))),i}function Aa(e){return e.replace(/left|right|bottom|top/g,t=>M3[t])}function $3(e){return{top:0,right:0,bottom:0,left:0,...e}}function Vb(e){return typeof e!="number"?$3(e):{top:e,right:e,bottom:e,left:e}}function Ra(e){const{x:t,y:n,width:r,height:o}=e;return{width:r,height:o,top:n,left:t,right:t+r,bottom:n+o,x:t,y:n}}function ty(e,t,n){let{reference:r,floating:o}=e;const i=Vn(t),s=mp(t),a=hp(s),l=sn(t),u=i==="y",c=r.x+r.width/2-o.width/2,f=r.y+r.height/2-o.height/2,d=r[a]/2-o[a]/2;let p;switch(l){case"top":p={x:c,y:r.y-o.height};break;case"bottom":p={x:c,y:r.y+r.height};break;case"right":p={x:r.x+r.width,y:f};break;case"left":p={x:r.x-o.width,y:f};break;default:p={x:r.x,y:r.y}}switch(Po(t)){case"start":p[s]-=d*(n&&u?-1:1);break;case"end":p[s]+=d*(n&&u?-1:1);break}return p}const F3=async(e,t,n)=>{const{placement:r="bottom",strategy:o="absolute",middleware:i=[],platform:s}=n,a=i.filter(Boolean),l=await(s.isRTL==null?void 0:s.isRTL(t));let u=await s.getElementRects({reference:e,floating:t,strategy:o}),{x:c,y:f}=ty(u,r,l),d=r,p={},w=0;for(let v=0;v<a.length;v++){const{name:b,fn:h}=a[v],{x:g,y:x,data:S,reset:P}=await h({x:c,y:f,initialPlacement:r,placement:d,strategy:o,middlewareData:p,rects:u,platform:s,elements:{reference:e,floating:t}});c=g??c,f=x??f,p={...p,[b]:{...p[b],...S}},P&&w<=50&&(w++,typeof P=="object"&&(P.placement&&(d=P.placement),P.rects&&(u=P.rects===!0?await s.getElementRects({reference:e,floating:t,strategy:o}):P.rects),{x:c,y:f}=ty(u,d,l)),v=-1)}return{x:c,y:f,placement:d,strategy:o,middlewareData:p}};async function Ni(e,t){var n;t===void 0&&(t={});const{x:r,y:o,platform:i,rects:s,elements:a,strategy:l}=e,{boundary:u="clippingAncestors",rootBoundary:c="viewport",elementContext:f="floating",altBoundary:d=!1,padding:p=0}=on(t,e),w=Vb(p),b=a[d?f==="floating"?"reference":"floating":f],h=Ra(await i.getClippingRect({element:(n=await(i.isElement==null?void 0:i.isElement(b)))==null||n?b:b.contextElement||await(i.getDocumentElement==null?void 0:i.getDocumentElement(a.floating)),boundary:u,rootBoundary:c,strategy:l})),g=f==="floating"?{x:r,y:o,width:s.floating.width,height:s.floating.height}:s.reference,x=await(i.getOffsetParent==null?void 0:i.getOffsetParent(a.floating)),S=await(i.isElement==null?void 0:i.isElement(x))?await(i.getScale==null?void 0:i.getScale(x))||{x:1,y:1}:{x:1,y:1},P=Ra(i.convertOffsetParentRelativeRectToViewportRelativeRect?await i.convertOffsetParentRelativeRectToViewportRelativeRect({elements:a,rect:g,offsetParent:x,strategy:l}):g);return{top:(h.top-P.top+w.top)/S.y,bottom:(P.bottom-h.bottom+w.bottom)/S.y,left:(h.left-P.left+w.left)/S.x,right:(P.right-h.right+w.right)/S.x}}const z3=e=>({name:"arrow",options:e,async fn(t){const{x:n,y:r,placement:o,rects:i,platform:s,elements:a,middlewareData:l}=t,{element:u,padding:c=0}=on(e,t)||{};if(u==null)return{};const f=Vb(c),d={x:n,y:r},p=mp(o),w=hp(p),v=await s.getDimensions(u),b=p==="y",h=b?"top":"left",g=b?"bottom":"right",x=b?"clientHeight":"clientWidth",S=i.reference[w]+i.reference[p]-d[p]-i.floating[w],P=d[p]-i.reference[p],_=await(s.getOffsetParent==null?void 0:s.getOffsetParent(u));let E=_?_[x]:0;(!E||!await(s.isElement==null?void 0:s.isElement(_)))&&(E=a.floating[x]||i.floating[w]);const C=S/2-P/2,O=E/2-v[w]/2-1,j=In(f[h],O),V=In(f[g],O),N=j,K=E-v[w]-V,H=E/2-v[w]/2+C,xe=hf(N,H,K),G=!l.arrow&&Po(o)!=null&&H!==xe&&i.reference[w]/2-(H<N?j:V)-v[w]/2<0,$=G?H<N?H-N:H-K:0;return{[p]:d[p]+$,data:{[p]:xe,centerOffset:H-xe-$,...G&&{alignmentOffset:$}},reset:G}}}),B3=function(e){return e===void 0&&(e={}),{name:"flip",options:e,async fn(t){var n,r;const{placement:o,middlewareData:i,rects:s,initialPlacement:a,platform:l,elements:u}=t,{mainAxis:c=!0,crossAxis:f=!0,fallbackPlacements:d,fallbackStrategy:p="bestFit",fallbackAxisSideDirection:w="none",flipAlignment:v=!0,...b}=on(e,t);if((n=i.arrow)!=null&&n.alignmentOffset)return{};const h=sn(o),g=Vn(a),x=sn(a)===a,S=await(l.isRTL==null?void 0:l.isRTL(u.floating)),P=d||(x||!v?[Aa(a)]:D3(a)),_=w!=="none";!d&&_&&P.push(...V3(a,v,w,S));const E=[a,...P],C=await Ni(t,b),O=[];let j=((r=i.flip)==null?void 0:r.overflows)||[];if(c&&O.push(C[h]),f){const H=L3(o,s,S);O.push(C[H[0]],C[H[1]])}if(j=[...j,{placement:o,overflows:O}],!O.every(H=>H<=0)){var V,N;const H=(((V=i.flip)==null?void 0:V.index)||0)+1,xe=E[H];if(xe)return{data:{index:H,overflows:j},reset:{placement:xe}};let G=(N=j.filter($=>$.overflows[0]<=0).sort(($,T)=>$.overflows[1]-T.overflows[1])[0])==null?void 0:N.placement;if(!G)switch(p){case"bestFit":{var K;const $=(K=j.filter(T=>{if(_){const A=Vn(T.placement);return A===g||A==="y"}return!0}).map(T=>[T.placement,T.overflows.filter(A=>A>0).reduce((A,M)=>A+M,0)]).sort((T,A)=>T[1]-A[1])[0])==null?void 0:K[0];$&&(G=$);break}case"initialPlacement":G=a;break}if(o!==G)return{reset:{placement:G}}}return{}}}};function ny(e,t){return{top:e.top-t.height,right:e.right-t.width,bottom:e.bottom-t.height,left:e.left-t.width}}function ry(e){return R3.some(t=>e[t]>=0)}const U3=function(e){return e===void 0&&(e={}),{name:"hide",options:e,async fn(t){const{rects:n}=t,{strategy:r="referenceHidden",...o}=on(e,t);switch(r){case"referenceHidden":{const i=await Ni(t,{...o,elementContext:"reference"}),s=ny(i,n.reference);return{data:{referenceHiddenOffsets:s,referenceHidden:ry(s)}}}case"escaped":{const i=await Ni(t,{...o,altBoundary:!0}),s=ny(i,n.floating);return{data:{escapedOffsets:s,escaped:ry(s)}}}default:return{}}}}};async function W3(e,t){const{placement:n,platform:r,elements:o}=e,i=await(r.isRTL==null?void 0:r.isRTL(o.floating)),s=sn(n),a=Po(n),l=Vn(n)==="y",u=["left","top"].includes(s)?-1:1,c=i&&l?-1:1,f=on(t,e);let{mainAxis:d,crossAxis:p,alignmentAxis:w}=typeof f=="number"?{mainAxis:f,crossAxis:0,alignmentAxis:null}:{mainAxis:f.mainAxis||0,crossAxis:f.crossAxis||0,alignmentAxis:f.alignmentAxis};return a&&typeof w=="number"&&(p=a==="end"?w*-1:w),l?{x:p*c,y:d*u}:{x:d*u,y:p*c}}const H3=function(e){return e===void 0&&(e=0),{name:"offset",options:e,async fn(t){var n,r;const{x:o,y:i,placement:s,middlewareData:a}=t,l=await W3(t,e);return s===((n=a.offset)==null?void 0:n.placement)&&(r=a.arrow)!=null&&r.alignmentOffset?{}:{x:o+l.x,y:i+l.y,data:{...l,placement:s}}}}},K3=function(e){return e===void 0&&(e={}),{name:"shift",options:e,async fn(t){const{x:n,y:r,placement:o}=t,{mainAxis:i=!0,crossAxis:s=!1,limiter:a={fn:b=>{let{x:h,y:g}=b;return{x:h,y:g}}},...l}=on(e,t),u={x:n,y:r},c=await Ni(t,l),f=Vn(sn(o)),d=pp(f);let p=u[d],w=u[f];if(i){const b=d==="y"?"top":"left",h=d==="y"?"bottom":"right",g=p+c[b],x=p-c[h];p=hf(g,p,x)}if(s){const b=f==="y"?"top":"left",h=f==="y"?"bottom":"right",g=w+c[b],x=w-c[h];w=hf(g,w,x)}const v=a.fn({...t,[d]:p,[f]:w});return{...v,data:{x:v.x-n,y:v.y-r,enabled:{[d]:i,[f]:s}}}}}},G3=function(e){return e===void 0&&(e={}),{options:e,fn(t){const{x:n,y:r,placement:o,rects:i,middlewareData:s}=t,{offset:a=0,mainAxis:l=!0,crossAxis:u=!0}=on(e,t),c={x:n,y:r},f=Vn(o),d=pp(f);let p=c[d],w=c[f];const v=on(a,t),b=typeof v=="number"?{mainAxis:v,crossAxis:0}:{mainAxis:0,crossAxis:0,...v};if(l){const x=d==="y"?"height":"width",S=i.reference[d]-i.floating[x]+b.mainAxis,P=i.reference[d]+i.reference[x]-b.mainAxis;p<S?p=S:p>P&&(p=P)}if(u){var h,g;const x=d==="y"?"width":"height",S=["top","left"].includes(sn(o)),P=i.reference[f]-i.floating[x]+(S&&((h=s.offset)==null?void 0:h[f])||0)+(S?0:b.crossAxis),_=i.reference[f]+i.reference[x]+(S?0:((g=s.offset)==null?void 0:g[f])||0)-(S?b.crossAxis:0);w<P?w=P:w>_&&(w=_)}return{[d]:p,[f]:w}}}},Y3=function(e){return e===void 0&&(e={}),{name:"size",options:e,async fn(t){var n,r;const{placement:o,rects:i,platform:s,elements:a}=t,{apply:l=()=>{},...u}=on(e,t),c=await Ni(t,u),f=sn(o),d=Po(o),p=Vn(o)==="y",{width:w,height:v}=i.floating;let b,h;f==="top"||f==="bottom"?(b=f,h=d===(await(s.isRTL==null?void 0:s.isRTL(a.floating))?"start":"end")?"left":"right"):(h=f,b=d==="end"?"top":"bottom");const g=v-c.top-c.bottom,x=w-c.left-c.right,S=In(v-c[b],g),P=In(w-c[h],x),_=!t.middlewareData.shift;let E=S,C=P;if((n=t.middlewareData.shift)!=null&&n.enabled.x&&(C=x),(r=t.middlewareData.shift)!=null&&r.enabled.y&&(E=g),_&&!d){const j=Ze(c.left,0),V=Ze(c.right,0),N=Ze(c.top,0),K=Ze(c.bottom,0);p?C=w-2*(j!==0||V!==0?j+V:Ze(c.left,c.right)):E=v-2*(N!==0||K!==0?N+K:Ze(c.top,c.bottom))}await l({...t,availableWidth:C,availableHeight:E});const O=await s.getDimensions(a.floating);return w!==O.width||v!==O.height?{reset:{rects:!0}}:{}}}};function vl(){return typeof window<"u"}function _o(e){return $b(e)?(e.nodeName||"").toLowerCase():"#document"}function tt(e){var t;return(e==null||(t=e.ownerDocument)==null?void 0:t.defaultView)||window}function It(e){var t;return(t=($b(e)?e.ownerDocument:e.document)||window.document)==null?void 0:t.documentElement}function $b(e){return vl()?e instanceof Node||e instanceof tt(e).Node:!1}function bt(e){return vl()?e instanceof Element||e instanceof tt(e).Element:!1}function Lt(e){return vl()?e instanceof HTMLElement||e instanceof tt(e).HTMLElement:!1}function oy(e){return!vl()||typeof ShadowRoot>"u"?!1:e instanceof ShadowRoot||e instanceof tt(e).ShadowRoot}function Zi(e){const{overflow:t,overflowX:n,overflowY:r,display:o}=St(e);return/auto|scroll|overlay|hidden|clip/.test(t+r+n)&&!["inline","contents"].includes(o)}function X3(e){return["table","td","th"].includes(_o(e))}function xl(e){return[":popover-open",":modal"].some(t=>{try{return e.matches(t)}catch{return!1}})}function gp(e){const t=yp(),n=bt(e)?St(e):e;return n.transform!=="none"||n.perspective!=="none"||(n.containerType?n.containerType!=="normal":!1)||!t&&(n.backdropFilter?n.backdropFilter!=="none":!1)||!t&&(n.filter?n.filter!=="none":!1)||["transform","perspective","filter"].some(r=>(n.willChange||"").includes(r))||["paint","layout","strict","content"].some(r=>(n.contain||"").includes(r))}function Q3(e){let t=$n(e);for(;Lt(t)&&!mo(t);){if(gp(t))return t;if(xl(t))return null;t=$n(t)}return null}function yp(){return typeof CSS>"u"||!CSS.supports?!1:CSS.supports("-webkit-backdrop-filter","none")}function mo(e){return["html","body","#document"].includes(_o(e))}function St(e){return tt(e).getComputedStyle(e)}function wl(e){return bt(e)?{scrollLeft:e.scrollLeft,scrollTop:e.scrollTop}:{scrollLeft:e.scrollX,scrollTop:e.scrollY}}function $n(e){if(_o(e)==="html")return e;const t=e.assignedSlot||e.parentNode||oy(e)&&e.host||It(e);return oy(t)?t.host:t}function Fb(e){const t=$n(e);return mo(t)?e.ownerDocument?e.ownerDocument.body:e.body:Lt(t)&&Zi(t)?t:Fb(t)}function Li(e,t,n){var r;t===void 0&&(t=[]),n===void 0&&(n=!0);const o=Fb(e),i=o===((r=e.ownerDocument)==null?void 0:r.body),s=tt(o);if(i){const a=gf(s);return t.concat(s,s.visualViewport||[],Zi(o)?o:[],a&&n?Li(a):[])}return t.concat(o,Li(o,[],n))}function gf(e){return e.parent&&Object.getPrototypeOf(e.parent)?e.frameElement:null}function zb(e){const t=St(e);let n=parseFloat(t.width)||0,r=parseFloat(t.height)||0;const o=Lt(e),i=o?e.offsetWidth:n,s=o?e.offsetHeight:r,a=Oa(n)!==i||Oa(r)!==s;return a&&(n=i,r=s),{width:n,height:r,$:a}}function vp(e){return bt(e)?e:e.contextElement}function to(e){const t=vp(e);if(!Lt(t))return Mt(1);const n=t.getBoundingClientRect(),{width:r,height:o,$:i}=zb(t);let s=(i?Oa(n.width):n.width)/r,a=(i?Oa(n.height):n.height)/o;return(!s||!Number.isFinite(s))&&(s=1),(!a||!Number.isFinite(a))&&(a=1),{x:s,y:a}}const Z3=Mt(0);function Bb(e){const t=tt(e);return!yp()||!t.visualViewport?Z3:{x:t.visualViewport.offsetLeft,y:t.visualViewport.offsetTop}}function q3(e,t,n){return t===void 0&&(t=!1),!n||t&&n!==tt(e)?!1:t}function pr(e,t,n,r){t===void 0&&(t=!1),n===void 0&&(n=!1);const o=e.getBoundingClientRect(),i=vp(e);let s=Mt(1);t&&(r?bt(r)&&(s=to(r)):s=to(e));const a=q3(i,n,r)?Bb(i):Mt(0);let l=(o.left+a.x)/s.x,u=(o.top+a.y)/s.y,c=o.width/s.x,f=o.height/s.y;if(i){const d=tt(i),p=r&&bt(r)?tt(r):r;let w=d,v=gf(w);for(;v&&r&&p!==w;){const b=to(v),h=v.getBoundingClientRect(),g=St(v),x=h.left+(v.clientLeft+parseFloat(g.paddingLeft))*b.x,S=h.top+(v.clientTop+parseFloat(g.paddingTop))*b.y;l*=b.x,u*=b.y,c*=b.x,f*=b.y,l+=x,u+=S,w=tt(v),v=gf(w)}}return Ra({width:c,height:f,x:l,y:u})}function xp(e,t){const n=wl(e).scrollLeft;return t?t.left+n:pr(It(e)).left+n}function Ub(e,t,n){n===void 0&&(n=!1);const r=e.getBoundingClientRect(),o=r.left+t.scrollLeft-(n?0:xp(e,r)),i=r.top+t.scrollTop;return{x:o,y:i}}function J3(e){let{elements:t,rect:n,offsetParent:r,strategy:o}=e;const i=o==="fixed",s=It(r),a=t?xl(t.floating):!1;if(r===s||a&&i)return n;let l={scrollLeft:0,scrollTop:0},u=Mt(1);const c=Mt(0),f=Lt(r);if((f||!f&&!i)&&((_o(r)!=="body"||Zi(s))&&(l=wl(r)),Lt(r))){const p=pr(r);u=to(r),c.x=p.x+r.clientLeft,c.y=p.y+r.clientTop}const d=s&&!f&&!i?Ub(s,l,!0):Mt(0);return{width:n.width*u.x,height:n.height*u.y,x:n.x*u.x-l.scrollLeft*u.x+c.x+d.x,y:n.y*u.y-l.scrollTop*u.y+c.y+d.y}}function eV(e){return Array.from(e.getClientRects())}function tV(e){const t=It(e),n=wl(e),r=e.ownerDocument.body,o=Ze(t.scrollWidth,t.clientWidth,r.scrollWidth,r.clientWidth),i=Ze(t.scrollHeight,t.clientHeight,r.scrollHeight,r.clientHeight);let s=-n.scrollLeft+xp(e);const a=-n.scrollTop;return St(r).direction==="rtl"&&(s+=Ze(t.clientWidth,r.clientWidth)-o),{width:o,height:i,x:s,y:a}}function nV(e,t){const n=tt(e),r=It(e),o=n.visualViewport;let i=r.clientWidth,s=r.clientHeight,a=0,l=0;if(o){i=o.width,s=o.height;const u=yp();(!u||u&&t==="fixed")&&(a=o.offsetLeft,l=o.offsetTop)}return{width:i,height:s,x:a,y:l}}function rV(e,t){const n=pr(e,!0,t==="fixed"),r=n.top+e.clientTop,o=n.left+e.clientLeft,i=Lt(e)?to(e):Mt(1),s=e.clientWidth*i.x,a=e.clientHeight*i.y,l=o*i.x,u=r*i.y;return{width:s,height:a,x:l,y:u}}function iy(e,t,n){let r;if(t==="viewport")r=nV(e,n);else if(t==="document")r=tV(It(e));else if(bt(t))r=rV(t,n);else{const o=Bb(e);r={x:t.x-o.x,y:t.y-o.y,width:t.width,height:t.height}}return Ra(r)}function Wb(e,t){const n=$n(e);return n===t||!bt(n)||mo(n)?!1:St(n).position==="fixed"||Wb(n,t)}function oV(e,t){const n=t.get(e);if(n)return n;let r=Li(e,[],!1).filter(a=>bt(a)&&_o(a)!=="body"),o=null;const i=St(e).position==="fixed";let s=i?$n(e):e;for(;bt(s)&&!mo(s);){const a=St(s),l=gp(s);!l&&a.position==="fixed"&&(o=null),(i?!l&&!o:!l&&a.position==="static"&&!!o&&["absolute","fixed"].includes(o.position)||Zi(s)&&!l&&Wb(e,s))?r=r.filter(c=>c!==s):o=a,s=$n(s)}return t.set(e,r),r}function iV(e){let{element:t,boundary:n,rootBoundary:r,strategy:o}=e;const s=[...n==="clippingAncestors"?xl(t)?[]:oV(t,this._c):[].concat(n),r],a=s[0],l=s.reduce((u,c)=>{const f=iy(t,c,o);return u.top=Ze(f.top,u.top),u.right=In(f.right,u.right),u.bottom=In(f.bottom,u.bottom),u.left=Ze(f.left,u.left),u},iy(t,a,o));return{width:l.right-l.left,height:l.bottom-l.top,x:l.left,y:l.top}}function sV(e){const{width:t,height:n}=zb(e);return{width:t,height:n}}function aV(e,t,n){const r=Lt(t),o=It(t),i=n==="fixed",s=pr(e,!0,i,t);let a={scrollLeft:0,scrollTop:0};const l=Mt(0);if(r||!r&&!i)if((_o(t)!=="body"||Zi(o))&&(a=wl(t)),r){const d=pr(t,!0,i,t);l.x=d.x+t.clientLeft,l.y=d.y+t.clientTop}else o&&(l.x=xp(o));const u=o&&!r&&!i?Ub(o,a):Mt(0),c=s.left+a.scrollLeft-l.x-u.x,f=s.top+a.scrollTop-l.y-u.y;return{x:c,y:f,width:s.width,height:s.height}}function Au(e){return St(e).position==="static"}function sy(e,t){if(!Lt(e)||St(e).position==="fixed")return null;if(t)return t(e);let n=e.offsetParent;return It(e)===n&&(n=n.ownerDocument.body),n}function Hb(e,t){const n=tt(e);if(xl(e))return n;if(!Lt(e)){let o=$n(e);for(;o&&!mo(o);){if(bt(o)&&!Au(o))return o;o=$n(o)}return n}let r=sy(e,t);for(;r&&X3(r)&&Au(r);)r=sy(r,t);return r&&mo(r)&&Au(r)&&!gp(r)?n:r||Q3(e)||n}const lV=async function(e){const t=this.getOffsetParent||Hb,n=this.getDimensions,r=await n(e.floating);return{reference:aV(e.reference,await t(e.floating),e.strategy),floating:{x:0,y:0,width:r.width,height:r.height}}};function uV(e){return St(e).direction==="rtl"}const cV={convertOffsetParentRelativeRectToViewportRelativeRect:J3,getDocumentElement:It,getClippingRect:iV,getOffsetParent:Hb,getElementRects:lV,getClientRects:eV,getDimensions:sV,getScale:to,isElement:bt,isRTL:uV};function fV(e,t){let n=null,r;const o=It(e);function i(){var a;clearTimeout(r),(a=n)==null||a.disconnect(),n=null}function s(a,l){a===void 0&&(a=!1),l===void 0&&(l=1),i();const{left:u,top:c,width:f,height:d}=e.getBoundingClientRect();if(a||t(),!f||!d)return;const p=Es(c),w=Es(o.clientWidth-(u+f)),v=Es(o.clientHeight-(c+d)),b=Es(u),g={rootMargin:-p+"px "+-w+"px "+-v+"px "+-b+"px",threshold:Ze(0,In(1,l))||1};let x=!0;function S(P){const _=P[0].intersectionRatio;if(_!==l){if(!x)return s();_?s(!1,_):r=setTimeout(()=>{s(!1,1e-7)},1e3)}x=!1}try{n=new IntersectionObserver(S,{...g,root:o.ownerDocument})}catch{n=new IntersectionObserver(S,g)}n.observe(e)}return s(!0),i}function dV(e,t,n,r){r===void 0&&(r={});const{ancestorScroll:o=!0,ancestorResize:i=!0,elementResize:s=typeof ResizeObserver=="function",layoutShift:a=typeof IntersectionObserver=="function",animationFrame:l=!1}=r,u=vp(e),c=o||i?[...u?Li(u):[],...Li(t)]:[];c.forEach(h=>{o&&h.addEventListener("scroll",n,{passive:!0}),i&&h.addEventListener("resize",n)});const f=u&&a?fV(u,n):null;let d=-1,p=null;s&&(p=new ResizeObserver(h=>{let[g]=h;g&&g.target===u&&p&&(p.unobserve(t),cancelAnimationFrame(d),d=requestAnimationFrame(()=>{var x;(x=p)==null||x.observe(t)})),n()}),u&&!l&&p.observe(u),p.observe(t));let w,v=l?pr(e):null;l&&b();function b(){const h=pr(e);v&&(h.x!==v.x||h.y!==v.y||h.width!==v.width||h.height!==v.height)&&n(),v=h,w=requestAnimationFrame(b)}return n(),()=>{var h;c.forEach(g=>{o&&g.removeEventListener("scroll",n),i&&g.removeEventListener("resize",n)}),f==null||f(),(h=p)==null||h.disconnect(),p=null,l&&cancelAnimationFrame(w)}}const pV=H3,hV=K3,mV=B3,gV=Y3,yV=U3,ay=z3,vV=G3,xV=(e,t,n)=>{const r=new Map,o={platform:cV,...n},i={...o.platform,_c:r};return F3(e,t,{...o,platform:i})};var Ys=typeof document<"u"?m.useLayoutEffect:m.useEffect;function Ma(e,t){if(e===t)return!0;if(typeof e!=typeof t)return!1;if(typeof e=="function"&&e.toString()===t.toString())return!0;let n,r,o;if(e&&t&&typeof e=="object"){if(Array.isArray(e)){if(n=e.length,n!==t.length)return!1;for(r=n;r--!==0;)if(!Ma(e[r],t[r]))return!1;return!0}if(o=Object.keys(e),n=o.length,n!==Object.keys(t).length)return!1;for(r=n;r--!==0;)if(!{}.hasOwnProperty.call(t,o[r]))return!1;for(r=n;r--!==0;){const i=o[r];if(!(i==="_owner"&&e.$$typeof)&&!Ma(e[i],t[i]))return!1}return!0}return e!==e&&t!==t}function Kb(e){return typeof window>"u"?1:(e.ownerDocument.defaultView||window).devicePixelRatio||1}function ly(e,t){const n=Kb(e);return Math.round(t*n)/n}function Ru(e){const t=m.useRef(e);return Ys(()=>{t.current=e}),t}function wV(e){e===void 0&&(e={});const{placement:t="bottom",strategy:n="absolute",middleware:r=[],platform:o,elements:{reference:i,floating:s}={},transform:a=!0,whileElementsMounted:l,open:u}=e,[c,f]=m.useState({x:0,y:0,strategy:n,placement:t,middlewareData:{},isPositioned:!1}),[d,p]=m.useState(r);Ma(d,r)||p(r);const[w,v]=m.useState(null),[b,h]=m.useState(null),g=m.useCallback(T=>{T!==_.current&&(_.current=T,v(T))},[]),x=m.useCallback(T=>{T!==E.current&&(E.current=T,h(T))},[]),S=i||w,P=s||b,_=m.useRef(null),E=m.useRef(null),C=m.useRef(c),O=l!=null,j=Ru(l),V=Ru(o),N=Ru(u),K=m.useCallback(()=>{if(!_.current||!E.current)return;const T={placement:t,strategy:n,middleware:d};V.current&&(T.platform=V.current),xV(_.current,E.current,T).then(A=>{const M={...A,isPositioned:N.current!==!1};H.current&&!Ma(C.current,M)&&(C.current=M,Bi.flushSync(()=>{f(M)}))})},[d,t,n,V,N]);Ys(()=>{u===!1&&C.current.isPositioned&&(C.current.isPositioned=!1,f(T=>({...T,isPositioned:!1})))},[u]);const H=m.useRef(!1);Ys(()=>(H.current=!0,()=>{H.current=!1}),[]),Ys(()=>{if(S&&(_.current=S),P&&(E.current=P),S&&P){if(j.current)return j.current(S,P,K);K()}},[S,P,K,j,O]);const xe=m.useMemo(()=>({reference:_,floating:E,setReference:g,setFloating:x}),[g,x]),G=m.useMemo(()=>({reference:S,floating:P}),[S,P]),$=m.useMemo(()=>{const T={position:n,left:0,top:0};if(!G.floating)return T;const A=ly(G.floating,c.x),M=ly(G.floating,c.y);return a?{...T,transform:"translate("+A+"px, "+M+"px)",...Kb(G.floating)>=1.5&&{willChange:"transform"}}:{position:n,left:A,top:M}},[n,a,G.floating,c.x,c.y]);return m.useMemo(()=>({...c,update:K,refs:xe,elements:G,floatingStyles:$}),[c,K,xe,G,$])}const bV=e=>{function t(n){return{}.hasOwnProperty.call(n,"current")}return{name:"arrow",options:e,fn(n){const{element:r,padding:o}=typeof e=="function"?e(n):e;return r&&t(r)?r.current!=null?ay({element:r.current,padding:o}).fn(n):{}:r?ay({element:r,padding:o}).fn(n):{}}}},SV=(e,t)=>({...pV(e),options:[e,t]}),PV=(e,t)=>({...hV(e),options:[e,t]}),_V=(e,t)=>({...vV(e),options:[e,t]}),EV=(e,t)=>({...mV(e),options:[e,t]}),CV=(e,t)=>({...gV(e),options:[e,t]}),TV=(e,t)=>({...yV(e),options:[e,t]}),kV=(e,t)=>({...bV(e),options:[e,t]});var jV="Arrow",Gb=m.forwardRef((e,t)=>{const{children:n,width:r=10,height:o=5,...i}=e;return y.jsx(wr.svg,{...i,ref:t,width:r,height:o,viewBox:"0 0 30 10",preserveAspectRatio:"none",children:e.asChild?n:y.jsx("polygon",{points:"0,0 30,0 15,10"})})});Gb.displayName=jV;var OV=Gb;function AV(e){const[t,n]=m.useState(void 0);return rn(()=>{if(e){n({width:e.offsetWidth,height:e.offsetHeight});const r=new ResizeObserver(o=>{if(!Array.isArray(o)||!o.length)return;const i=o[0];let s,a;if("borderBoxSize"in i){const l=i.borderBoxSize,u=Array.isArray(l)?l[0]:l;s=u.inlineSize,a=u.blockSize}else s=e.offsetWidth,a=e.offsetHeight;n({width:s,height:a})});return r.observe(e,{box:"border-box"}),()=>r.unobserve(e)}else n(void 0)},[e]),t}var wp="Popper",[Yb,Xb]=ep(wp),[RV,Qb]=Yb(wp),Zb=e=>{const{__scopePopper:t,children:n}=e,[r,o]=m.useState(null);return y.jsx(RV,{scope:t,anchor:r,onAnchorChange:o,children:n})};Zb.displayName=wp;var qb="PopperAnchor",Jb=m.forwardRef((e,t)=>{const{__scopePopper:n,virtualRef:r,...o}=e,i=Qb(qb,n),s=m.useRef(null),a=xr(t,s);return m.useEffect(()=>{i.onAnchorChange((r==null?void 0:r.current)||s.current)}),r?null:y.jsx(wr.div,{...o,ref:a})});Jb.displayName=qb;var bp="PopperContent",[MV,NV]=Yb(bp),eS=m.forwardRef((e,t)=>{var Hn,Pp,_p,Ep,Cp,Tp;const{__scopePopper:n,side:r="bottom",sideOffset:o=0,align:i="center",alignOffset:s=0,arrowPadding:a=0,avoidCollisions:l=!0,collisionBoundary:u=[],collisionPadding:c=0,sticky:f="partial",hideWhenDetached:d=!1,updatePositionStrategy:p="optimized",onPlaced:w,...v}=e,b=Qb(bp,n),[h,g]=m.useState(null),x=xr(t,Co=>g(Co)),[S,P]=m.useState(null),_=AV(S),E=(_==null?void 0:_.width)??0,C=(_==null?void 0:_.height)??0,O=r+(i!=="center"?"-"+i:""),j=typeof c=="number"?c:{top:0,right:0,bottom:0,left:0,...c},V=Array.isArray(u)?u:[u],N=V.length>0,K={padding:j,boundary:V.filter(DV),altBoundary:N},{refs:H,floatingStyles:xe,placement:G,isPositioned:$,middlewareData:T}=wV({strategy:"fixed",placement:O,whileElementsMounted:(...Co)=>dV(...Co,{animationFrame:p==="always"}),elements:{reference:b.anchor},middleware:[SV({mainAxis:o+C,alignmentAxis:s}),l&&PV({mainAxis:!0,crossAxis:!1,limiter:f==="partial"?_V():void 0,...K}),l&&EV({...K}),CV({...K,apply:({elements:Co,rects:kp,availableWidth:gS,availableHeight:yS})=>{const{width:vS,height:xS}=kp.reference,qi=Co.floating.style;qi.setProperty("--radix-popper-available-width",`${gS}px`),qi.setProperty("--radix-popper-available-height",`${yS}px`),qi.setProperty("--radix-popper-anchor-width",`${vS}px`),qi.setProperty("--radix-popper-anchor-height",`${xS}px`)}}),S&&kV({element:S,padding:a}),IV({arrowWidth:E,arrowHeight:C}),d&&TV({strategy:"referenceHidden",...K})]}),[A,M]=rS(G),B=Nt(w);rn(()=>{$&&(B==null||B())},[$,B]);const pe=(Hn=T.arrow)==null?void 0:Hn.x,br=(Pp=T.arrow)==null?void 0:Pp.y,Vt=((_p=T.arrow)==null?void 0:_p.centerOffset)!==0,[Eo,$t]=m.useState();return rn(()=>{h&&$t(window.getComputedStyle(h).zIndex)},[h]),y.jsx("div",{ref:H.setFloating,"data-radix-popper-content-wrapper":"",style:{...xe,transform:$?xe.transform:"translate(0, -200%)",minWidth:"max-content",zIndex:Eo,"--radix-popper-transform-origin":[(Ep=T.transformOrigin)==null?void 0:Ep.x,(Cp=T.transformOrigin)==null?void 0:Cp.y].join(" "),...((Tp=T.hide)==null?void 0:Tp.referenceHidden)&&{visibility:"hidden",pointerEvents:"none"}},dir:e.dir,children:y.jsx(MV,{scope:n,placedSide:A,onArrowChange:P,arrowX:pe,arrowY:br,shouldHideArrow:Vt,children:y.jsx(wr.div,{"data-side":A,"data-align":M,...v,ref:x,style:{...v.style,animation:$?void 0:"none"}})})})});eS.displayName=bp;var tS="PopperArrow",LV={top:"bottom",right:"left",bottom:"top",left:"right"},nS=m.forwardRef(function(t,n){const{__scopePopper:r,...o}=t,i=NV(tS,r),s=LV[i.placedSide];return y.jsx("span",{ref:i.onArrowChange,style:{position:"absolute",left:i.arrowX,top:i.arrowY,[s]:0,transformOrigin:{top:"",right:"0 0",bottom:"center 0",left:"100% 0"}[i.placedSide],transform:{top:"translateY(100%)",right:"translateY(50%) rotate(90deg) translateX(-50%)",bottom:"rotate(180deg)",left:"translateY(50%) rotate(-90deg) translateX(50%)"}[i.placedSide],visibility:i.shouldHideArrow?"hidden":void 0},children:y.jsx(OV,{...o,ref:n,style:{...o.style,display:"block"}})})});nS.displayName=tS;function DV(e){return e!==null}var IV=e=>({name:"transformOrigin",options:e,fn(t){var b,h,g;const{placement:n,rects:r,middlewareData:o}=t,s=((b=o.arrow)==null?void 0:b.centerOffset)!==0,a=s?0:e.arrowWidth,l=s?0:e.arrowHeight,[u,c]=rS(n),f={start:"0%",center:"50%",end:"100%"}[c],d=(((h=o.arrow)==null?void 0:h.x)??0)+a/2,p=(((g=o.arrow)==null?void 0:g.y)??0)+l/2;let w="",v="";return u==="bottom"?(w=s?f:`${d}px`,v=`${-l}px`):u==="top"?(w=s?f:`${d}px`,v=`${r.floating.height+l}px`):u==="right"?(w=`${-l}px`,v=s?f:`${p}px`):u==="left"&&(w=`${r.floating.width+l}px`,v=s?f:`${p}px`),{data:{x:w,y:v}}}});function rS(e){const[t,n="center"]=e.split("-");return[t,n]}var VV=Zb,$V=Jb,FV=eS,zV=nS;function BV(e,t){return m.useReducer((n,r)=>t[n][r]??n,e)}var oS=e=>{const{present:t,children:n}=e,r=UV(t),o=typeof n=="function"?n({present:r.isPresent}):m.Children.only(n),i=xr(r.ref,WV(o));return typeof n=="function"||r.isPresent?m.cloneElement(o,{ref:i}):null};oS.displayName="Presence";function UV(e){const[t,n]=m.useState(),r=m.useRef({}),o=m.useRef(e),i=m.useRef("none"),s=e?"mounted":"unmounted",[a,l]=BV(s,{mounted:{UNMOUNT:"unmounted",ANIMATION_OUT:"unmountSuspended"},unmountSuspended:{MOUNT:"mounted",ANIMATION_END:"unmounted"},unmounted:{MOUNT:"mounted"}});return m.useEffect(()=>{const u=Cs(r.current);i.current=a==="mounted"?u:"none"},[a]),rn(()=>{const u=r.current,c=o.current;if(c!==e){const d=i.current,p=Cs(u);e?l("MOUNT"):p==="none"||(u==null?void 0:u.display)==="none"?l("UNMOUNT"):l(c&&d!==p?"ANIMATION_OUT":"UNMOUNT"),o.current=e}},[e,l]),rn(()=>{if(t){let u;const c=t.ownerDocument.defaultView??window,f=p=>{const v=Cs(r.current).includes(p.animationName);if(p.target===t&&v&&(l("ANIMATION_END"),!o.current)){const b=t.style.animationFillMode;t.style.animationFillMode="forwards",u=c.setTimeout(()=>{t.style.animationFillMode==="forwards"&&(t.style.animationFillMode=b)})}},d=p=>{p.target===t&&(i.current=Cs(r.current))};return t.addEventListener("animationstart",d),t.addEventListener("animationcancel",f),t.addEventListener("animationend",f),()=>{c.clearTimeout(u),t.removeEventListener("animationstart",d),t.removeEventListener("animationcancel",f),t.removeEventListener("animationend",f)}}else l("ANIMATION_END")},[t,l]),{isPresent:["mounted","unmountSuspended"].includes(a),ref:m.useCallback(u=>{u&&(r.current=getComputedStyle(u)),n(u)},[])}}function Cs(e){return(e==null?void 0:e.animationName)||"none"}function WV(e){var r,o;let t=(r=Object.getOwnPropertyDescriptor(e.props,"ref"))==null?void 0:r.get,n=t&&"isReactWarning"in t&&t.isReactWarning;return n?e.ref:(t=(o=Object.getOwnPropertyDescriptor(e,"ref"))==null?void 0:o.get,n=t&&"isReactWarning"in t&&t.isReactWarning,n?e.props.ref:e.props.ref||e.ref)}var HV="VisuallyHidden",iS=m.forwardRef((e,t)=>y.jsx(wr.span,{...e,ref:t,style:{position:"absolute",border:0,width:1,height:1,padding:0,margin:-1,overflow:"hidden",clip:"rect(0, 0, 0, 0)",whiteSpace:"nowrap",wordWrap:"normal",...e.style}}));iS.displayName=HV;var KV=iS,[bl,oF]=ep("Tooltip",[Xb]),Sl=Xb(),sS="TooltipProvider",GV=700,yf="tooltip.open",[YV,Sp]=bl(sS),aS=e=>{const{__scopeTooltip:t,delayDuration:n=GV,skipDelayDuration:r=300,disableHoverableContent:o=!1,children:i}=e,[s,a]=m.useState(!0),l=m.useRef(!1),u=m.useRef(0);return m.useEffect(()=>{const c=u.current;return()=>window.clearTimeout(c)},[]),y.jsx(YV,{scope:t,isOpenDelayed:s,delayDuration:n,onOpen:m.useCallback(()=>{window.clearTimeout(u.current),a(!1)},[]),onClose:m.useCallback(()=>{window.clearTimeout(u.current),u.current=window.setTimeout(()=>a(!0),r)},[r]),isPointerInTransitRef:l,onPointerInTransitChange:m.useCallback(c=>{l.current=c},[]),disableHoverableContent:o,children:i})};aS.displayName=sS;var Pl="Tooltip",[XV,_l]=bl(Pl),lS=e=>{const{__scopeTooltip:t,children:n,open:r,defaultOpen:o=!1,onOpenChange:i,disableHoverableContent:s,delayDuration:a}=e,l=Sp(Pl,e.__scopeTooltip),u=Sl(t),[c,f]=m.useState(null),d=Us(),p=m.useRef(0),w=s??l.disableHoverableContent,v=a??l.delayDuration,b=m.useRef(!1),[h=!1,g]=S1({prop:r,defaultProp:o,onChange:E=>{E?(l.onOpen(),document.dispatchEvent(new CustomEvent(yf))):l.onClose(),i==null||i(E)}}),x=m.useMemo(()=>h?b.current?"delayed-open":"instant-open":"closed",[h]),S=m.useCallback(()=>{window.clearTimeout(p.current),p.current=0,b.current=!1,g(!0)},[g]),P=m.useCallback(()=>{window.clearTimeout(p.current),p.current=0,g(!1)},[g]),_=m.useCallback(()=>{window.clearTimeout(p.current),p.current=window.setTimeout(()=>{b.current=!0,g(!0),p.current=0},v)},[v,g]);return m.useEffect(()=>()=>{p.current&&(window.clearTimeout(p.current),p.current=0)},[]),y.jsx(VV,{...u,children:y.jsx(XV,{scope:t,contentId:d,open:h,stateAttribute:x,trigger:c,onTriggerChange:f,onTriggerEnter:m.useCallback(()=>{l.isOpenDelayed?_():S()},[l.isOpenDelayed,_,S]),onTriggerLeave:m.useCallback(()=>{w?P():(window.clearTimeout(p.current),p.current=0)},[P,w]),onOpen:S,onClose:P,disableHoverableContent:w,children:n})})};lS.displayName=Pl;var vf="TooltipTrigger",uS=m.forwardRef((e,t)=>{const{__scopeTooltip:n,...r}=e,o=_l(vf,n),i=Sp(vf,n),s=Sl(n),a=m.useRef(null),l=xr(t,a,o.onTriggerChange),u=m.useRef(!1),c=m.useRef(!1),f=m.useCallback(()=>u.current=!1,[]);return m.useEffect(()=>()=>document.removeEventListener("pointerup",f),[f]),y.jsx($V,{asChild:!0,...s,children:y.jsx(wr.button,{"aria-describedby":o.open?o.contentId:void 0,"data-state":o.stateAttribute,...r,ref:l,onPointerMove:Ut(e.onPointerMove,d=>{d.pointerType!=="touch"&&!c.current&&!i.isPointerInTransitRef.current&&(o.onTriggerEnter(),c.current=!0)}),onPointerLeave:Ut(e.onPointerLeave,()=>{o.onTriggerLeave(),c.current=!1}),onPointerDown:Ut(e.onPointerDown,()=>{u.current=!0,document.addEventListener("pointerup",f,{once:!0})}),onFocus:Ut(e.onFocus,()=>{u.current||o.onOpen()}),onBlur:Ut(e.onBlur,o.onClose),onClick:Ut(e.onClick,o.onClose)})})});uS.displayName=vf;var QV="TooltipPortal",[iF,ZV]=bl(QV,{forceMount:void 0}),go="TooltipContent",cS=m.forwardRef((e,t)=>{const n=ZV(go,e.__scopeTooltip),{forceMount:r=n.forceMount,side:o="top",...i}=e,s=_l(go,e.__scopeTooltip);return y.jsx(oS,{present:r||s.open,children:s.disableHoverableContent?y.jsx(fS,{side:o,...i,ref:t}):y.jsx(qV,{side:o,...i,ref:t})})}),qV=m.forwardRef((e,t)=>{const n=_l(go,e.__scopeTooltip),r=Sp(go,e.__scopeTooltip),o=m.useRef(null),i=xr(t,o),[s,a]=m.useState(null),{trigger:l,onClose:u}=n,c=o.current,{onPointerInTransitChange:f}=r,d=m.useCallback(()=>{a(null),f(!1)},[f]),p=m.useCallback((w,v)=>{const b=w.currentTarget,h={x:w.clientX,y:w.clientY},g=n$(h,b.getBoundingClientRect()),x=r$(h,g),S=o$(v.getBoundingClientRect()),P=s$([...x,...S]);a(P),f(!0)},[f]);return m.useEffect(()=>()=>d(),[d]),m.useEffect(()=>{if(l&&c){const w=b=>p(b,c),v=b=>p(b,l);return l.addEventListener("pointerleave",w),c.addEventListener("pointerleave",v),()=>{l.removeEventListener("pointerleave",w),c.removeEventListener("pointerleave",v)}}},[l,c,p,d]),m.useEffect(()=>{if(s){const w=v=>{const b=v.target,h={x:v.clientX,y:v.clientY},g=(l==null?void 0:l.contains(b))||(c==null?void 0:c.contains(b)),x=!i$(h,s);g?d():x&&(d(),u())};return document.addEventListener("pointermove",w),()=>document.removeEventListener("pointermove",w)}},[l,c,s,u,d]),y.jsx(fS,{...e,ref:i})}),[JV,e$]=bl(Pl,{isInside:!1}),fS=m.forwardRef((e,t)=>{const{__scopeTooltip:n,children:r,"aria-label":o,onEscapeKeyDown:i,onPointerDownOutside:s,...a}=e,l=_l(go,n),u=Sl(n),{onClose:c}=l;return m.useEffect(()=>(document.addEventListener(yf,c),()=>document.removeEventListener(yf,c)),[c]),m.useEffect(()=>{if(l.trigger){const f=d=>{const p=d.target;p!=null&&p.contains(l.trigger)&&c()};return window.addEventListener("scroll",f,{capture:!0}),()=>window.removeEventListener("scroll",f,{capture:!0})}},[l.trigger,c]),y.jsx(Db,{asChild:!0,disableOutsidePointerEvents:!1,onEscapeKeyDown:i,onPointerDownOutside:s,onFocusOutside:f=>f.preventDefault(),onDismiss:c,children:y.jsxs(FV,{"data-state":l.stateAttribute,...u,...a,ref:t,style:{...a.style,"--radix-tooltip-content-transform-origin":"var(--radix-popper-transform-origin)","--radix-tooltip-content-available-width":"var(--radix-popper-available-width)","--radix-tooltip-content-available-height":"var(--radix-popper-available-height)","--radix-tooltip-trigger-width":"var(--radix-popper-anchor-width)","--radix-tooltip-trigger-height":"var(--radix-popper-anchor-height)"},children:[y.jsx(Nb,{children:r}),y.jsx(JV,{scope:n,isInside:!0,children:y.jsx(KV,{id:l.contentId,role:"tooltip",children:o||r})})]})})});cS.displayName=go;var dS="TooltipArrow",t$=m.forwardRef((e,t)=>{const{__scopeTooltip:n,...r}=e,o=Sl(n);return e$(dS,n).isInside?null:y.jsx(zV,{...o,...r,ref:t})});t$.displayName=dS;function n$(e,t){const n=Math.abs(t.top-e.y),r=Math.abs(t.bottom-e.y),o=Math.abs(t.right-e.x),i=Math.abs(t.left-e.x);switch(Math.min(n,r,o,i)){case i:return"left";case o:return"right";case n:return"top";case r:return"bottom";default:throw new Error("unreachable")}}function r$(e,t,n=5){const r=[];switch(t){case"top":r.push({x:e.x-n,y:e.y+n},{x:e.x+n,y:e.y+n});break;case"bottom":r.push({x:e.x-n,y:e.y-n},{x:e.x+n,y:e.y-n});break;case"left":r.push({x:e.x+n,y:e.y-n},{x:e.x+n,y:e.y+n});break;case"right":r.push({x:e.x-n,y:e.y-n},{x:e.x-n,y:e.y+n});break}return r}function o$(e){const{top:t,right:n,bottom:r,left:o}=e;return[{x:o,y:t},{x:n,y:t},{x:n,y:r},{x:o,y:r}]}function i$(e,t){const{x:n,y:r}=e;let o=!1;for(let i=0,s=t.length-1;i<t.length;s=i++){const a=t[i].x,l=t[i].y,u=t[s].x,c=t[s].y;l>r!=c>r&&n<(u-a)*(r-l)/(c-l)+a&&(o=!o)}return o}function s$(e){const t=e.slice();return t.sort((n,r)=>n.x<r.x?-1:n.x>r.x?1:n.y<r.y?-1:n.y>r.y?1:0),a$(t)}function a$(e){if(e.length<=1)return e.slice();const t=[];for(let r=0;r<e.length;r++){const o=e[r];for(;t.length>=2;){const i=t[t.length-1],s=t[t.length-2];if((i.x-s.x)*(o.y-s.y)>=(i.y-s.y)*(o.x-s.x))t.pop();else break}t.push(o)}t.pop();const n=[];for(let r=e.length-1;r>=0;r--){const o=e[r];for(;n.length>=2;){const i=n[n.length-1],s=n[n.length-2];if((i.x-s.x)*(o.y-s.y)>=(i.y-s.y)*(o.x-s.x))n.pop();else break}n.push(o)}return n.pop(),t.length===1&&n.length===1&&t[0].x===n[0].x&&t[0].y===n[0].y?t:t.concat(n)}var l$=aS,u$=lS,c$=uS,pS=cS;const f$=l$,d$=u$,p$=c$,hS=m.forwardRef(({className:e,sideOffset:t=4,...n},r)=>y.jsx(pS,{ref:r,sideOffset:t,className:de("z-50 overflow-hidden rounded-md border bg-popover px-3 py-1.5 text-sm text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",e),...n}));hS.displayName=pS.displayName;
 const patternNames = {
-  TIE: "扎结",
-  DYE: "染色",
-  Spiral: "螺旋纹",
-  "Fish Scales": "鱼鳞纹",
-  Prismatic: "棱形纹",
-  "Stone-wrapping": "包物扎"
+  TIE: ["Tying", "扎结"],
+  DYE: ["Dyeing", "染色"],
+  Spiral: ["Spiral", "螺旋纹"],
+  "Fish Scales": ["Fish Scales", "鱼鳞纹"],
+  Prismatic: ["Diamond", "棱形纹"],
+  "Stone-wrapping": ["Stone Wrap", "包物扎"]
 };
 
 function mS({ bespoke, items }) {
   const pairing = items.length === 2;
+  const tied = Object.values(patternNames).find(words => words[1] === bespoke.data.data);
   return y.jsxs("main", {
     className: "game-choices",
     children: [
-      y.jsx("h1", { children: pairing ? "接下来做什么？" : "想扎出哪种花纹？" }),
+      y.jsx("h1", {
+        children: pairing ? gameWords("What will you do next?", "接下来做什么？") :
+          gameWords("Choose a pattern", "想扎出哪种花纹？")
+      }),
       y.jsx("div", {
         className: "game-choices__grid",
         "data-count": items.length,
-        children: items.map(item => y.jsxs("article", {
-          className: "game-choice",
-          style: { "--choice-art": `url("${item.bg}")` },
-          children: [
-            y.jsx("h2", { children: patternNames[item.title] || item.title }),
-            y.jsx("span", { className: "game-choice__english", lang: "en", children: item.title }),
-            pairing && y.jsx("p", {
-              children: item.title === "TIE" ? "学习不同扎法，将布料扎成你喜欢的花纹。" :
-                item.disabled ? "完成一种扎法后即可染色。" : `把扎好的${bespoke.data.data}放进染缸，看看成品。`
-            }),
-            y.jsx("button", {
-              type: "button", className: "game-button game-button--primary",
-              disabled: item.disabled,
-              onClick: item.onCallback || (() => bespoke.next(item.chooses)),
-              children: item.disabled ? "尚未解锁" : "选择" + patternNames[item.title]
-            })
-          ]
-        }, item.title))
+        children: items.map(item => {
+          const [english, chinese] = patternNames[item.title];
+          const description = !pairing ? null : item.title === "TIE"
+            ? ["Explore traditional ways of tying fabric to create distinct patterns.", "学习不同的扎结技巧，让布料形成独特花纹。"]
+            : item.disabled
+              ? ["Complete a tying technique to unlock dyeing.", "完成一种扎法后即可染色。"]
+              : tied
+                ? [`Dye your ${tied[0].toLowerCase()} fabric and see how the pattern turns out.`, `把扎好的${tied[1]}放进染缸，看看成品。`]
+                : ["Dye your fabric and reveal the pattern.", "把布料放进染缸，看看成品。"];
+          return y.jsxs("article", {
+            className: "game-choice",
+            style: { "--choice-art": `url("${item.bg}")` },
+            children: [
+              y.jsx("h2", { children: gameWords(english, chinese) }),
+              pairing && y.jsx("p", { children: gameWords(...description) }),
+              y.jsx("button", {
+                type: "button", className: "game-button game-button--primary",
+                disabled: item.disabled, "data-sound": item.title === "DYE" ? "water" : "cloth",
+                onClick: item.onCallback || (() => bespoke.next(item.chooses)),
+                children: item.disabled ? gameWords("Locked", "尚未解锁") :
+                  gameWords("Choose " + english.toLowerCase(), "选择" + chinese)
+              })
+            ]
+          }, item.title);
+        })
       })
     ]
   });
 }
-const m$={name:"扎法的选择",nexts:["p14","p20","p24","p30"]},g$=[{title:"Spiral",buttonText:"Spiral Pattern",chooses:{next:"p14"},bg:"/spiral.png"},{title:"Fish Scales",buttonText:"Fish Scales Pattern",chooses:{next:"p20"},bg:"/fish.png"},{title:"Prismatic",buttonText:"Prismatic Pattern",chooses:{next:"p24"},bg:"/prismatic.png"},{title:"Stone-wrapping",buttonText:"Stone-wrapping Parttern",chooses:{next:"p30"},bg:"/stone.png"}];function y$(){const e=D();return y.jsx(mS,{bespoke:e,items:g$,pertentage:45})}const v$=Object.freeze(Object.defineProperty({__proto__:null,default:y$,opts:m$},Symbol.toStringTag,{value:"Module"})),x$={name:"扎法的选择很多",nexts:["p13"]};function w$(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/12.mp4",playing:!0,children:[{key:"p13",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:()=>e.next()})}]}})}const b$=Object.freeze(Object.defineProperty({__proto__:null,default:w$,opts:x$},Symbol.toStringTag,{value:"Module"})),S$={name:"搞一根木棍",nexts:["p10","p11"],condition:e=>e.next==="p9"};function P$(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/9.mp4",playing:!0,children:[{key:"p10",position:{left:400,bottom:150},component:y.jsx(ja,{onClick:()=>e.push("p10"),children:"抢嘴里的木棍"})},{key:"p11",position:{right:400,bottom:150},component:y.jsx(ja,{onClick:()=>e.push("p11"),children:"等老师回来"})}]}})}const _$=Object.freeze(Object.defineProperty({__proto__:null,default:P$,opts:S$},Symbol.toStringTag,{value:"Module"})),E$={name:"扎和染的选择",nexts:["p9","p34"]};function C$(){const e=D(),t=m.useMemo(()=>[{title:"TIE",description:"You'll explore the variety of wonderful ties that produce different beautiful patterns on the linen",buttonText:"TIE",chooses:{next:"p9"},bg:"f4d07d78dca4782d6f20cb233bb8457.jpg",onCallback:()=>e.push(bn(e.data)?"p9":"p13")},{title:"DYE",description:"After choosing one of the ties, you will experience the dyeing process and eventually enjoy the corresponding patterns, one of which is your mother's favorite.",buttonText:"DYE",chooses:{next:"p34"},disabled:bn(e.data),bg:"569119c037b93acef424214c6e70ec9.jpg",tooltip:bn(e.data)?"Tip:At least one method of tie can becompleted before the staining interfacecan be opened.(After completing page 19.23.29.33)":void 0}],[e.data,e]);return y.jsx(mS,{bespoke:e,initialActive:bn(e.data)?0:1,items:t,pertentage:70})}const T$=Object.freeze(Object.defineProperty({__proto__:null,default:C$,opts:E$},Symbol.toStringTag,{value:"Module"})),k$={name:"从侧面几乎抓住",nexts:["p5"]};function j$(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/4.mp4",playing:!0,children:[{key:"timeout",position:{left:600,top:400},component:y.jsx(Tb,{timeout:3}),visible:t=>t>4.5&&t<7.5},{key:"p4",position:{left:600,top:400},component:y.jsx(Cb,{}),visible:t=>t>7.5&&t<11}],onEnded:()=>e.next()}})}const O$=Object.freeze(Object.defineProperty({__proto__:null,default:j$,opts:k$},Symbol.toStringTag,{value:"Module"})),A$={name:"结尾",nexts:[]};function R$(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"/videos/end.mp4",playing:!0,children:[{key:"end",position:{bottom:50,left:768},component:y.jsx(me,{label:"回到首页",onCallback:()=>e.pushAndStore("preview",void 0,{})})}]}})}const M$=Object.freeze(Object.defineProperty({__proto__:null,default:R$,opts:A$},Symbol.toStringTag,{value:"Module"}))
+
+const m$={name:"扎法的选择",nexts:["p14","p20","p24","p30"]},g$=[{title:"Spiral",buttonText:"Spiral Pattern",chooses:{next:"p14"},bg:"/spiral.png"},{title:"Fish Scales",buttonText:"Fish Scales Pattern",chooses:{next:"p20"},bg:"/fish.png"},{title:"Prismatic",buttonText:"Prismatic Pattern",chooses:{next:"p24"},bg:"/prismatic.png"},{title:"Stone-wrapping",buttonText:"Stone-wrapping Parttern",chooses:{next:"p30"},bg:"/stone.png"}];function y$(){const e=D();return y.jsx(mS,{bespoke:e,items:g$,pertentage:45})}const v$=Object.freeze(Object.defineProperty({__proto__:null,default:y$,opts:m$},Symbol.toStringTag,{value:"Module"})),x$={name:"扎法的选择很多",nexts:["p13"]};function w$(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/12.mp4",playing:!0,children:[{key:"p13",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:()=>e.next()})}]}})}const b$=Object.freeze(Object.defineProperty({__proto__:null,default:w$,opts:x$},Symbol.toStringTag,{value:"Module"})),S$={name:"搞一根木棍",nexts:["p10","p11"],condition:e=>e.next==="p9"};function P$(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/9.mp4",playing:!0,children:[{key:"p10",position:{left:400,bottom:150},component:y.jsx(ja,{onClick:()=>e.push("p10"),children:gameWords("Grab the stick","抢嘴里的木棍")})},{key:"p11",position:{right:400,bottom:150},component:y.jsx(ja,{onClick:()=>e.push("p11"),children:gameWords("Wait for the master","等老师回来")})}]}})}const _$=Object.freeze(Object.defineProperty({__proto__:null,default:P$,opts:S$},Symbol.toStringTag,{value:"Module"})),E$={name:"扎和染的选择",nexts:["p9","p34"]};function C$(){const e=D(),t=m.useMemo(()=>[{title:"TIE",description:"You'll explore the variety of wonderful ties that produce different beautiful patterns on the linen",buttonText:"TIE",chooses:{next:"p9"},bg:"f4d07d78dca4782d6f20cb233bb8457.jpg",onCallback:()=>e.push(bn(e.data)?"p9":"p13")},{title:"DYE",description:"After choosing one of the ties, you will experience the dyeing process and eventually enjoy the corresponding patterns, one of which is your mother's favorite.",buttonText:"DYE",chooses:{next:"p34"},disabled:bn(e.data),bg:"569119c037b93acef424214c6e70ec9.jpg",tooltip:bn(e.data)?"Tip:At least one method of tie can becompleted before the staining interfacecan be opened.(After completing page 19.23.29.33)":void 0}],[e.data,e]);return y.jsx(mS,{bespoke:e,initialActive:bn(e.data)?0:1,items:t,pertentage:70})}const T$=Object.freeze(Object.defineProperty({__proto__:null,default:C$,opts:E$},Symbol.toStringTag,{value:"Module"})),k$={name:"从侧面几乎抓住",nexts:["p5"]};function j$(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/4.mp4",playing:!0,children:[{key:"timeout",position:{left:600,top:400},component:y.jsx(Tb,{timeout:3}),visible:t=>t>4.5&&t<7.5},{key:"p4",position:{left:600,top:400},component:y.jsx(Cb,{}),visible:t=>t>7.5&&t<11}],onEnded:()=>e.next()}})}const O$=Object.freeze(Object.defineProperty({__proto__:null,default:j$,opts:k$},Symbol.toStringTag,{value:"Module"})),A$={name:"结尾",nexts:[]};function R$(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"/videos/end.mp4",playing:!0,children:[{key:"end",position:{bottom:50,left:768},component:y.jsx(me,{label:["Return home","回到首页"],onCallback:()=>e.pushAndStore("preview",void 0,{})})}]}})}const M$=Object.freeze(Object.defineProperty({__proto__:null,default:R$,opts:A$},Symbol.toStringTag,{value:"Module"}))
 ;
 const N$={name:"AR非遗扎染",nexts:["p2"]};
 function F$(){return y.jsx(GameIntro,{})}
