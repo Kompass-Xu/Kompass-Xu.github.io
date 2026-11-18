@@ -1,5 +1,4 @@
 import { playGameSound } from "./game-sound.js?v=1";
-import { paintCinematicVideo } from "./game-cinema.js?v=1";
 var wS=Object.defineProperty;var jp=e=>{throw TypeError(e)};var bS=(e,t,n)=>t in e?wS(e,t,{enumerable:!0,configurable:!0,writable:!0,value:n}):e[t]=n;var Kn=(e,t,n)=>bS(e,typeof t!="symbol"?t+"":t,n),Op=(e,t,n)=>t.has(e)||jp("Cannot "+n);var Sr=(e,t,n)=>(Op(e,t,"read from private field"),n?n.call(e):t.get(e)),El=(e,t,n)=>t.has(e)?jp("Cannot add the same private member more than once"):t instanceof WeakSet?t.add(e):t.set(e,n),Cl=(e,t,n,r)=>(Op(e,t,"write to private field"),r?r.call(e,n):t.set(e,n),n);function SS(e,t){for(var n=0;n<t.length;n++){const r=t[n];if(typeof r!="string"&&!Array.isArray(r)){for(const o in r)if(o!=="default"&&!(o in e)){const i=Object.getOwnPropertyDescriptor(r,o);i&&Object.defineProperty(e,o,i.get?i:{enumerable:!0,get:()=>r[o]})}}}return Object.freeze(Object.defineProperty(e,Symbol.toStringTag,{value:"Module"}))}(function(){const t=document.createElement("link").relList;if(t&&t.supports&&t.supports("modulepreload"))return;for(const o of document.querySelectorAll('link[rel="modulepreload"]'))r(o);new MutationObserver(o=>{for(const i of o)if(i.type==="childList")for(const s of i.addedNodes)s.tagName==="LINK"&&s.rel==="modulepreload"&&r(s)}).observe(document,{childList:!0,subtree:!0});function n(o){const i={};return o.integrity&&(i.integrity=o.integrity),o.referrerPolicy&&(i.referrerPolicy=o.referrerPolicy),o.crossOrigin==="use-credentials"?i.credentials="include":o.crossOrigin==="anonymous"?i.credentials="omit":i.credentials="same-origin",i}function r(o){if(o.ep)return;o.ep=!0;const i=n(o);fetch(o.href,i)}})();var Tl=typeof globalThis<"u"?globalThis:typeof window<"u"?window:typeof global<"u"?global:typeof self<"u"?self:{};function Na(e){return e&&e.__esModule&&Object.prototype.hasOwnProperty.call(e,"default")?e.default:e}function PS(e){if(e.__esModule)return e;var t=e.default;if(typeof t=="function"){var n=function r(){return this instanceof r?Reflect.construct(t,arguments,this.constructor):t.apply(this,arguments)};n.prototype=t.prototype}else n={};return Object.defineProperty(n,"__esModule",{value:!0}),Object.keys(e).forEach(function(r){var o=Object.getOwnPropertyDescriptor(e,r);Object.defineProperty(n,r,o.get?o:{enumerable:!0,get:function(){return e[r]}})}),n}var uy={exports:{}},La={},cy={exports:{}},z={};/**
  * @license React
  * react.production.min.js
@@ -139,34 +138,28 @@ function useCinematicLayout() {
   return compact;
 }
 
-function useFilmCanvas(video, film, ambient, compact, visible) {
-  const [frameReady, setFrameReady] = m.useState(false);
-  const [canvasUnavailable, setCanvasUnavailable] = m.useState(false);
-  const useCanvas = compact && !canvasUnavailable;
-  m.useEffect(() => {
-    if (!useCanvas) {
-      setFrameReady(false);
-      return;
-    }
-    if (!visible) return;
-    return paintCinematicVideo(video.current, film.current, ambient?.current, {
-      onFrame: () => setFrameReady(true),
-      onUnavailable: () => setCanvasUnavailable(true)
-    });
-  }, [useCanvas, visible, video, film, ambient]);
-  return { useCanvas, frameReady };
+function blockFilmTap(event) {
+  event.preventDefault();
+  event.stopPropagation();
+}
+
+function FilmTouchShield({ className }) {
+  return y.jsx("div", {
+    className, "aria-hidden": true,
+    onPointerDown: blockFilmTap,
+    onClick: blockFilmTap,
+    onDoubleClick: blockFilmTap,
+    onContextMenu: blockFilmTap
+  });
 }
 
 function GameVideo({ bespoke, video, retry }) {
   const { menuOpen, setMenuOpen } = UL();
   const { save, toggleSound, markEnding, playEffect } = m.useContext(gameSession);
   const node = m.useRef(null);
-  const film = m.useRef(null);
-  const ambient = m.useRef(null);
   const [measure, size] = QM();
   const [controlsOpen, setControlsOpen] = m.useState(false);
   const compact = useCinematicLayout();
-  const { useCanvas, frameReady } = useFilmCanvas(node, film, ambient, compact, !menuOpen);
   const [playing, setPlaying] = m.useState(video.playing !== false);
   const [rate, setRate] = m.useState(1);
   const [time, setTime] = m.useState(0);
@@ -258,7 +251,6 @@ function GameVideo({ bespoke, video, retry }) {
 
   return y.jsxs("div", {
     className: compact ? "game-player game-player--cinematic" : "game-player",
-    "data-frame": frameReady ? "ready" : undefined,
     children: [
       y.jsxs("div", {
         className: "game-player__stage",
@@ -268,18 +260,10 @@ function GameVideo({ bespoke, video, retry }) {
             ref: measure,
             className: "game-player__frame",
             children: [
-              useCanvas && y.jsx("canvas", {
-                ref: ambient, className: "game-player__ambient", width: 96, height: 54, "aria-hidden": true
-              }),
-              useCanvas && y.jsx("canvas", {
-                ref: film, className: "game-player__film", width: 640, height: 360, "aria-hidden": true
-              }),
               y.jsx("video", {
                 ...embeddedFilmOptions, ref: node,
-                className: useCanvas ? "game-player__source--hidden" : undefined,
                 src: video.url, muted: save.muted, preload: "auto",
                 "aria-label": gameLabel(...gameSceneTitle(bespoke.current)),
-                "aria-hidden": useCanvas || undefined,
                 onLoadedMetadata: event => setDuration(event.currentTarget.duration),
                 onTimeUpdate: event => setTime(event.currentTarget.currentTime),
                 onPlaying: () => setStatus("ready"),
@@ -287,6 +271,7 @@ function GameVideo({ bespoke, video, retry }) {
                 onError: () => setStatus("error"),
                 onEnded: finish
               }),
+              y.jsx(FilmTouchShield, { className: "game-player__touch-shield" }),
               !compact && !menuOpen && actions.map(({ key, position, className, component }) => (
                 component.type === me
                   ? y.jsx("div", { className: "game-player__continue", children: component }, key)
@@ -911,9 +896,6 @@ function GameIntro({ cover = false }) {
   const { save, resume, start } = m.useContext(gameSession);
   const { menuOpen } = UL();
   const video = m.useRef(null);
-  const film = m.useRef(null);
-  const compact = useCinematicLayout();
-  const { useCanvas, frameReady } = useFilmCanvas(video, film, undefined, compact, !menuOpen);
   m.useEffect(() => {
     const node = video.current;
     const motion = matchMedia("(prefers-reduced-motion: reduce)");
@@ -928,15 +910,11 @@ function GameIntro({ cover = false }) {
   return y.jsxs("main", {
     className: "game-intro",
     children: [
-      useCanvas && y.jsx("canvas", {
-        ref: film, className: "game-intro__film", width: 640, height: 360,
-        style: { opacity: frameReady ? 1 : 0 }, "aria-hidden": true
-      }),
       y.jsx("video", {
         ...embeddedFilmOptions, ref: video, src: "/videos/home.mp4", muted: true, loop: true,
-        className: useCanvas ? "game-player__source--hidden" : undefined,
         preload: cover && menuOpen ? "none" : "metadata", "aria-hidden": true
       }),
+      y.jsx(FilmTouchShield, { className: "game-intro__touch-shield" }),
       y.jsxs("div", {
         className: "game-intro__content",
         children: [

@@ -4,26 +4,13 @@
   user-select: none;
 }
 
-.game-player__source--hidden {
-  position: absolute !important;
-  inset: 0 auto auto 0 !important;
-  width: 1px !important;
-  height: 1px !important;
-  max-width: 1px;
-  max-height: 1px;
-  opacity: 0;
-  overflow: hidden;
-  clip-path: inset(50%);
-}
-
-.game-intro__film {
+.game-intro__touch-shield {
   position: absolute;
-  z-index: -2;
+  z-index: -1;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  pointer-events: none;
+  -webkit-touch-callout: none;
+  touch-action: pan-y pinch-zoom;
+  user-select: none;
 }
 
 .game-player--cinematic {
@@ -67,24 +54,13 @@
 .game-player--cinematic .game-player__stage {
   overflow: hidden;
   container-type: normal;
-  background: radial-gradient(ellipse at center, #20395c 0, #101831 62%, #080e1a 100%);
+  background: radial-gradient(ellipse at 50% 45%, #263c5b 0, #101831 62%, #080e1a 100%);
   -webkit-touch-callout: none;
   user-select: none;
 }
 
 .game-player--cinematic .game-player__frame {
   background: transparent;
-}
-
-.game-player__ambient {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: blur(36px) brightness(.47) saturate(.82);
-  transform: scale(1.17);
-  pointer-events: none;
 }
 
 .game-player--cinematic .game-player__stage::after {
@@ -96,27 +72,26 @@
   pointer-events: none;
 }
 
-.game-player--cinematic .game-player__film,
-.game-player--cinematic video:not(.game-player__source--hidden) {
+.game-player--cinematic .game-player__frame > video,
+.game-player--cinematic .game-player__touch-shield {
   position: absolute;
   z-index: 1;
   inset: var(--film-center) auto auto 50%;
   width: var(--film-width);
   height: var(--film-height);
   transform: translate(-50%, -50%);
+}
+
+.game-player--cinematic .game-player__frame > video {
   object-fit: contain;
-  pointer-events: none;
-  mask-image: linear-gradient(180deg, transparent, black 3% 97%, transparent);
 }
 
-.game-player__ambient,
-.game-player__film {
-  opacity: 0;
-  transition: opacity .25s ease-out;
-}
-
-.game-player--cinematic[data-frame="ready"] :is(.game-player__ambient, .game-player__film) {
-  opacity: 1;
+.game-player__touch-shield {
+  position: absolute;
+  inset: 0;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+  user-select: none;
 }
 
 .game-player--cinematic .game-player__actions {
@@ -227,12 +202,5 @@
     bottom: max(66px, calc(env(safe-area-inset-bottom) + 52px));
     margin-inline-start: min(25vw, 180px);
     width: min(170px, 26vw);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .game-player__ambient,
-  .game-player__film {
-    transition: none;
   }
 }
