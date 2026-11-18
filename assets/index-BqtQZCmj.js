@@ -1,4 +1,5 @@
 import { playGameSound } from "./game-sound.js?v=1";
+import { paintCinematicVideo } from "./game-cinema.js?v=1";
 var wS=Object.defineProperty;var jp=e=>{throw TypeError(e)};var bS=(e,t,n)=>t in e?wS(e,t,{enumerable:!0,configurable:!0,writable:!0,value:n}):e[t]=n;var Kn=(e,t,n)=>bS(e,typeof t!="symbol"?t+"":t,n),Op=(e,t,n)=>t.has(e)||jp("Cannot "+n);var Sr=(e,t,n)=>(Op(e,t,"read from private field"),n?n.call(e):t.get(e)),El=(e,t,n)=>t.has(e)?jp("Cannot add the same private member more than once"):t instanceof WeakSet?t.add(e):t.set(e,n),Cl=(e,t,n,r)=>(Op(e,t,"write to private field"),r?r.call(e,n):t.set(e,n),n);function SS(e,t){for(var n=0;n<t.length;n++){const r=t[n];if(typeof r!="string"&&!Array.isArray(r)){for(const o in r)if(o!=="default"&&!(o in e)){const i=Object.getOwnPropertyDescriptor(r,o);i&&Object.defineProperty(e,o,i.get?i:{enumerable:!0,get:()=>r[o]})}}}return Object.freeze(Object.defineProperty(e,Symbol.toStringTag,{value:"Module"}))}(function(){const t=document.createElement("link").relList;if(t&&t.supports&&t.supports("modulepreload"))return;for(const o of document.querySelectorAll('link[rel="modulepreload"]'))r(o);new MutationObserver(o=>{for(const i of o)if(i.type==="childList")for(const s of i.addedNodes)s.tagName==="LINK"&&s.rel==="modulepreload"&&r(s)}).observe(document,{childList:!0,subtree:!0});function n(o){const i={};return o.integrity&&(i.integrity=o.integrity),o.referrerPolicy&&(i.referrerPolicy=o.referrerPolicy),o.crossOrigin==="use-credentials"?i.credentials="include":o.crossOrigin==="anonymous"?i.credentials="omit":i.credentials="same-origin",i}function r(o){if(o.ep)return;o.ep=!0;const i=n(o);fetch(o.href,i)}})();var Tl=typeof globalThis<"u"?globalThis:typeof window<"u"?window:typeof global<"u"?global:typeof self<"u"?self:{};function Na(e){return e&&e.__esModule&&Object.prototype.hasOwnProperty.call(e,"default")?e.default:e}function PS(e){if(e.__esModule)return e;var t=e.default;if(typeof t=="function"){var n=function r(){return this instanceof r?Reflect.construct(t,arguments,this.constructor):t.apply(this,arguments)};n.prototype=t.prototype}else n={};return Object.defineProperty(n,"__esModule",{value:!0}),Object.keys(e).forEach(function(r){var o=Object.getOwnPropertyDescriptor(e,r);Object.defineProperty(n,r,o.get?o:{enumerable:!0,get:function(){return e[r]}})}),n}var uy={exports:{}},La={},cy={exports:{}},z={};/**
  * @license React
  * react.production.min.js
@@ -114,11 +115,58 @@ function I({ bespoke, video }) {
   return video && y.jsx(GameVideo, { bespoke, video, retry: () => setAttempt(value => value + 1) }, attempt);
 }
 
+const cinematicMedia = "(max-width: 900px), (pointer: coarse) and (max-height: 600px)";
+const embeddedFilmOptions = {
+  playsInline: true,
+  "webkit-playsinline": "",
+  controls: false,
+  controlslist: "nodownload nofullscreen noremoteplayback",
+  disablePictureInPicture: true,
+  disableRemotePlayback: true,
+  draggable: false,
+  tabIndex: -1,
+  onContextMenu: event => event.preventDefault()
+};
+
+function useCinematicLayout() {
+  const [compact, setCompact] = m.useState(() => matchMedia(cinematicMedia).matches);
+  m.useEffect(() => {
+    const query = matchMedia(cinematicMedia);
+    const update = () => setCompact(query.matches);
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+  return compact;
+}
+
+function useFilmCanvas(video, film, ambient, compact, visible) {
+  const [frameReady, setFrameReady] = m.useState(false);
+  const [canvasUnavailable, setCanvasUnavailable] = m.useState(false);
+  const useCanvas = compact && !canvasUnavailable;
+  m.useEffect(() => {
+    if (!useCanvas) {
+      setFrameReady(false);
+      return;
+    }
+    if (!visible) return;
+    return paintCinematicVideo(video.current, film.current, ambient?.current, {
+      onFrame: () => setFrameReady(true),
+      onUnavailable: () => setCanvasUnavailable(true)
+    });
+  }, [useCanvas, visible, video, film, ambient]);
+  return { useCanvas, frameReady };
+}
+
 function GameVideo({ bespoke, video, retry }) {
   const { menuOpen, setMenuOpen } = UL();
   const { save, toggleSound, markEnding, playEffect } = m.useContext(gameSession);
   const node = m.useRef(null);
+  const film = m.useRef(null);
+  const ambient = m.useRef(null);
   const [measure, size] = QM();
+  const [controlsOpen, setControlsOpen] = m.useState(false);
+  const compact = useCinematicLayout();
+  const { useCanvas, frameReady } = useFilmCanvas(node, film, ambient, compact, !menuOpen);
   const [playing, setPlaying] = m.useState(video.playing !== false);
   const [rate, setRate] = m.useState(1);
   const [time, setTime] = m.useState(0);
@@ -126,15 +174,11 @@ function GameVideo({ bespoke, video, retry }) {
   const [status, setStatus] = m.useState("loading");
   const [finished, setFinished] = m.useState(false);
   const [slow, setSlow] = m.useState(false);
-  const [compact, setCompact] = m.useState(() => matchMedia("(max-width: 900px)").matches);
   const stalled = status === "loading" || status === "buffering";
 
   m.useEffect(() => {
-    const query = matchMedia("(max-width: 900px)");
-    const update = () => setCompact(query.matches);
-    query.addEventListener("change", update);
-    return () => query.removeEventListener("change", update);
-  }, []);
+    if (!compact) setControlsOpen(false);
+  }, [compact]);
 
   m.useEffect(() => {
     const player = node.current;
@@ -191,6 +235,20 @@ function GameVideo({ bespoke, video, retry }) {
   }
 
   const actions = (video.children || []).filter(({ visible }) => visible ? visible(time) : finished);
+  const mainActions = actions.filter(({ key }) => key !== "materials");
+  const detailActions = actions.filter(({ key }) => key === "materials");
+  const leadingAction = mainActions[0]?.component.type;
+  const gesture = [_t, dp, Qi, Tb, Cb].includes(leadingAction);
+  const actionStyle = gesture ? "gesture" : mainActions.length > 1 ? "choice" : "continue";
+
+  function showActions(items, style, label) {
+    if (items.length === 0) return null;
+    return y.jsx("div", {
+      className: "game-player__actions game-player__actions--" + style,
+      role: "group", "aria-label": gameLabel(...label),
+      children: items.map(({ key, component }) => y.jsx("div", { children: renderAction(component) }, key))
+    });
+  }
   function renderAction(component) {
     if (component.type === Tb) return y.jsx(Tb, { timeout: Math.max(1, Math.ceil(7.5 - time)) });
     return component;
@@ -199,19 +257,29 @@ function GameVideo({ bespoke, video, retry }) {
   const progress = duration > 0 ? Math.min(100, Math.round(time / duration * 100)) : 0;
 
   return y.jsxs("div", {
-    className: "game-player",
+    className: compact ? "game-player game-player--cinematic" : "game-player",
+    "data-frame": frameReady ? "ready" : undefined,
     children: [
       y.jsxs("div", {
         className: "game-player__stage",
+        onContextMenu: event => event.preventDefault(),
         children: [
           y.jsxs("div", {
             ref: measure,
             className: "game-player__frame",
             children: [
+              useCanvas && y.jsx("canvas", {
+                ref: ambient, className: "game-player__ambient", width: 96, height: 54, "aria-hidden": true
+              }),
+              useCanvas && y.jsx("canvas", {
+                ref: film, className: "game-player__film", width: 640, height: 360, "aria-hidden": true
+              }),
               y.jsx("video", {
-                ref: node,
-                src: video.url, muted: save.muted, playsInline: true, preload: "auto",
+                ...embeddedFilmOptions, ref: node,
+                className: useCanvas ? "game-player__source--hidden" : undefined,
+                src: video.url, muted: save.muted, preload: "auto",
                 "aria-label": gameLabel(...gameSceneTitle(bespoke.current)),
+                "aria-hidden": useCanvas || undefined,
                 onLoadedMetadata: event => setDuration(event.currentTarget.duration),
                 onTimeUpdate: event => setTime(event.currentTarget.currentTime),
                 onPlaying: () => setStatus("ready"),
@@ -224,6 +292,8 @@ function GameVideo({ bespoke, video, retry }) {
                   ? y.jsx("div", { className: "game-player__continue", children: component }, key)
                   : y.jsx(eN, { position, width: size.width, height: size.height, className, children: renderAction(component) }, key)
               )),
+              compact && !menuOpen && showActions(mainActions, actionStyle, ["Scene actions", "当前剧情操作"]),
+              compact && !menuOpen && showActions(detailActions, "detail", ["Scene details", "剧情补充"]),
               showRecovery && y.jsxs("div", {
                 className: "game-player__feedback",
                 children: [
@@ -248,17 +318,18 @@ function GameVideo({ bespoke, video, retry }) {
                 ]
               })
             ]
-          }),
-          compact && !menuOpen && actions.length > 0 && y.jsx("div", {
-            className: "game-player__actions",
-            role: "group",
-            "aria-label": gameLabel("Scene actions", "当前剧情操作"),
-            children: actions.map(({ key, component }) => y.jsx("div", { children: renderAction(component) }, key))
           })
         ]
       }),
+      compact && y.jsx("button", {
+        type: "button", className: "game-button game-player__settings",
+        "aria-controls": "scene-playback", "aria-expanded": controlsOpen,
+        onClick: () => setControlsOpen(value => !value),
+        children: gameWords("Playback", "播放设置")
+      }),
       y.jsxs("div", {
-        className: "game-player__controls",
+        className: "game-player__controls", id: "scene-playback",
+        hidden: compact && !controlsOpen,
         role: "group",
         "aria-label": gameLabel("Playback controls", "播放控制"),
         children: [
@@ -840,6 +911,9 @@ function GameIntro({ cover = false }) {
   const { save, resume, start } = m.useContext(gameSession);
   const { menuOpen } = UL();
   const video = m.useRef(null);
+  const film = m.useRef(null);
+  const compact = useCinematicLayout();
+  const { useCanvas, frameReady } = useFilmCanvas(video, film, undefined, compact, !menuOpen);
   m.useEffect(() => {
     const node = video.current;
     const motion = matchMedia("(prefers-reduced-motion: reduce)");
@@ -854,9 +928,14 @@ function GameIntro({ cover = false }) {
   return y.jsxs("main", {
     className: "game-intro",
     children: [
+      useCanvas && y.jsx("canvas", {
+        ref: film, className: "game-intro__film", width: 640, height: 360,
+        style: { opacity: frameReady ? 1 : 0 }, "aria-hidden": true
+      }),
       y.jsx("video", {
-        ref: video, src: "/videos/home.mp4", muted: true, loop: true, playsInline: true,
-        preload: cover && menuOpen ? "none" : "metadata", "aria-hidden": true, tabIndex: -1
+        ...embeddedFilmOptions, ref: video, src: "/videos/home.mp4", muted: true, loop: true,
+        className: useCanvas ? "game-player__source--hidden" : undefined,
+        preload: cover && menuOpen ? "none" : "metadata", "aria-hidden": true
       }),
       y.jsxs("div", {
         className: "game-intro__content",
