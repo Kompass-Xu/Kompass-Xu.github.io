@@ -1,0 +1,57 @@
+.game-player__frame > video {
+  pointer-events: none;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+.game-player__touch-shield,
+.game-intro__touch-shield {
+  position: absolute;
+  inset: 0;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+.game-player__touch-shield {
+  touch-action: manipulation;
+}
+
+.game-intro__touch-shield {
+  z-index: -1;
+  touch-action: pan-y pinch-zoom;
+}
+
+.game-player__timeline {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  min-width: 24px;
+  margin-inline: 8px;
+}
+
+.game-player__timeline .game-player__progress {
+  width: 100%;
+  min-width: 0;
+}
+
+.game-player__dye-marker {
+  position: absolute;
+  top: 50%;
+  left: var(--video-progress);
+  width: 21px;
+  height: 21px;
+  transform: translate(-50%, -50%);
+  border: 1px solid #ebd6a7;
+  border-radius: 50%;
+  background: #263d74 url("/assets/artwork/dye-progress.webp") center / cover no-repeat;
+  box-shadow: 0 0 0 1px #101a37, 0 1px 5px #080e1a9c;
+  pointer-events: none;
+  transition: left .16s linear;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-player__dye-marker {
+    transition: none;
+  }
+}

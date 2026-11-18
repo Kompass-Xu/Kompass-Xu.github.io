@@ -1,55 +1,82 @@
-const profiles = {
-  wood: { duration: .13, notes: [[256, .30, 29], [698, .23, 49], [1080, .13, 56]], noise: .17, decay: 40 },
-  cloth: { duration: .19, notes: [[375, .13, 26], [562, .09, 26]], noise: .35, decay: 19 },
-  water: { duration: .24, notes: [[565, .34, 21, -195], [832, .16, 24, -285]], noise: .15, decay: 21 },
-  chime: { duration: .29, notes: [[469, .24, 14], [704, .23, 16], [939, .10, 19]], noise: .07, decay: 34 }
+const hoverProfile = {
+  duration: .17, strength: .58, strings: [[440, 0, .43]]
 };
 
+// Related cues use the same pentatonic pitches and a slightly different attack.
+const pressProfiles = {
+  wood:  { duration: .30, strength: .86, strings: [[293.66, 0, .69], [440, .038, .21]] },
+  cloth: { duration: .33, strength: .78, strings: [[329.63, 0, .64], [440, .052, .22]] },
+  water: { duration: .36, strength: .75, strings: [[392, 0, .60, 2], [587.33, .062, .19, -4]] },
+  chime: { duration: .41, strength: .81, strings: [[293.66, 0, .57], [587.33, .055, .25]] }
+};
+
+const stringPartials = [1, .40, .22, .10, .042];
 let audio;
 let output;
-let lastStart = -Infinity;
+const lastStart = { hover: -Infinity, press: -Infinity };
 const samples = new Map();
 
 function makeSample(profile) {
   const rate = audio.sampleRate;
   const buffer = audio.createBuffer(1, Math.ceil(rate * profile.duration), rate);
   const channel = buffer.getChannelData(0);
-  let previousNoise = 0;
-  for (let index = 0; index < channel.length; index += 1) {
-    const time = index / rate;
-    previousNoise = previousNoise * .68 + (Math.random() * 2 - 1) * .32;
-    let value = previousNoise * profile.noise * Math.exp(-time * profile.decay);
-    for (const [frequency, amplitude, decay, bend = 0] of profile.notes) {
-      const cycles = frequency * time + bend * time * time / (2 * profile.duration);
-      value += amplitude * Math.sin(2 * Math.PI * cycles) * Math.exp(-time * decay);
+
+  for (const [pitch, delay, volume, bend = -2] of profile.strings) {
+    const offset = Math.round(delay * rate);
+    for (let index = offset; index < channel.length; index += 1) {
+      const time = (index - offset) / rate;
+      const cycles = pitch * time + bend * time * (1 - Math.exp(-time * 12));
+      let string = 0;
+      stringPartials.forEach((level, partial) => {
+        const harmonic = partial + 1;
+        string += level * Math.sin(2 * Math.PI * cycles * harmonic) *
+          Math.exp(-time * (9 + 3.2 * harmonic));
+      });
+      const attack = Math.min(1, time * 240);
+      const touch = Math.sin(2 * Math.PI * 1270 * time) * .065 * Math.exp(-time * 118);
+      channel[index] += (string * .55 + touch) * volume * attack;
     }
-    const fade = Math.min(1, time * 320, (profile.duration - time) * 160);
-    channel[index] = value * fade;
+  }
+
+  for (let index = 0; index < channel.length; index += 1) {
+    channel[index] *= Math.min(1, (channel.length - index - 1) / (rate * .035));
   }
   return buffer;
 }
 
-export async function playGameSound(name = "wood") {
+export async function playGameSound(name = "wood", interaction = "press") {
   if (name === "none") return;
+  const hovering = interaction === "hover";
   try {
     if (!audio) {
+      if (hovering && navigator.userActivation?.hasBeenActive === false) return;
       const Context = window.AudioContext || window.webkitAudioContext;
       if (!Context) return;
       audio = new Context();
       output = audio.createGain();
-      output.gain.value = .23;
+      output.gain.value = .32;
       output.connect(audio.destination);
     }
-    if (audio.state === "suspended" || audio.state === "interrupted") await audio.resume();
+    if (!hovering && (audio.state === "suspended" || audio.state === "interrupted")) await audio.resume();
+    if (audio.state !== "running") return;
+
     const now = performance.now();
-    if (audio.state !== "running" || now - lastStart < 45) return;
-    lastStart = now;
-    const profile = profiles[name] ?? profiles.wood;
+    const type = hovering ? "hover" : "press";
+    if (now - lastStart[type] < (hovering ? 55 : 32)) return;
+    lastStart[type] = now;
+    const profile = hovering ? hoverProfile : pressProfiles[name] ?? pressProfiles.wood;
     if (!samples.has(profile)) samples.set(profile, makeSample(profile));
+
     const source = audio.createBufferSource();
+    const level = audio.createGain();
     source.buffer = samples.get(profile);
-    source.connect(output);
-    source.onended = () => source.disconnect();
+    level.gain.value = profile.strength;
+    source.connect(level);
+    level.connect(output);
+    source.onended = () => {
+      source.disconnect();
+      level.disconnect();
+    };
     source.start();
   } catch {
     // Audio policy and output-device failures should leave controls usable.
