@@ -21,6 +21,32 @@
   touch-action: pan-y pinch-zoom;
 }
 
+.game-header .game-fullscreen {
+  width: 44px;
+  min-height: 44px;
+  padding-inline: 0;
+}
+
+.game-fullscreen__icon {
+  display: grid;
+  grid-template: repeat(2, 6px) / repeat(2, 6px);
+  gap: 4px;
+}
+
+.game-fullscreen__icon span {
+  border-top: 2px solid currentColor;
+  border-left: 2px solid currentColor;
+  transform: rotate(calc(var(--corner-angle, 0deg) + var(--corner-flip, 0deg)));
+}
+
+.game-fullscreen__icon span:nth-child(2) { --corner-angle: 90deg; }
+.game-fullscreen__icon span:nth-child(3) { --corner-angle: -90deg; }
+.game-fullscreen__icon span:nth-child(4) { --corner-angle: 180deg; }
+
+.game-fullscreen[aria-pressed="true"] .game-fullscreen__icon {
+  --corner-flip: 180deg;
+}
+
 .game-player__timeline {
   position: relative;
   display: flex;

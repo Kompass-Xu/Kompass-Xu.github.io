@@ -1,4 +1,5 @@
 import { playGameSound } from "./game-sound.js?v=2";
+import { canEnterGameFullscreen, enterOnFirstGameAction, isGameFullscreen, toggleGameFullscreen } from "./game-fullscreen.js";
 var wS=Object.defineProperty;var jp=e=>{throw TypeError(e)};var bS=(e,t,n)=>t in e?wS(e,t,{enumerable:!0,configurable:!0,writable:!0,value:n}):e[t]=n;var Kn=(e,t,n)=>bS(e,typeof t!="symbol"?t+"":t,n),Op=(e,t,n)=>t.has(e)||jp("Cannot "+n);var Sr=(e,t,n)=>(Op(e,t,"read from private field"),n?n.call(e):t.get(e)),El=(e,t,n)=>t.has(e)?jp("Cannot add the same private member more than once"):t instanceof WeakSet?t.add(e):t.set(e,n),Cl=(e,t,n,r)=>(Op(e,t,"write to private field"),r?r.call(e,n):t.set(e,n),n);function SS(e,t){for(var n=0;n<t.length;n++){const r=t[n];if(typeof r!="string"&&!Array.isArray(r)){for(const o in r)if(o!=="default"&&!(o in e)){const i=Object.getOwnPropertyDescriptor(r,o);i&&Object.defineProperty(e,o,i.get?i:{enumerable:!0,get:()=>r[o]})}}}return Object.freeze(Object.defineProperty(e,Symbol.toStringTag,{value:"Module"}))}(function(){const t=document.createElement("link").relList;if(t&&t.supports&&t.supports("modulepreload"))return;for(const o of document.querySelectorAll('link[rel="modulepreload"]'))r(o);new MutationObserver(o=>{for(const i of o)if(i.type==="childList")for(const s of i.addedNodes)s.tagName==="LINK"&&s.rel==="modulepreload"&&r(s)}).observe(document,{childList:!0,subtree:!0});function n(o){const i={};return o.integrity&&(i.integrity=o.integrity),o.referrerPolicy&&(i.referrerPolicy=o.referrerPolicy),o.crossOrigin==="use-credentials"?i.credentials="include":o.crossOrigin==="anonymous"?i.credentials="omit":i.credentials="same-origin",i}function r(o){if(o.ep)return;o.ep=!0;const i=n(o);fetch(o.href,i)}})();var Tl=typeof globalThis<"u"?globalThis:typeof window<"u"?window:typeof global<"u"?global:typeof self<"u"?self:{};function Na(e){return e&&e.__esModule&&Object.prototype.hasOwnProperty.call(e,"default")?e.default:e}function PS(e){if(e.__esModule)return e;var t=e.default;if(typeof t=="function"){var n=function r(){return this instanceof r?Reflect.construct(t,arguments,this.constructor):t.apply(this,arguments)};n.prototype=t.prototype}else n={};return Object.defineProperty(n,"__esModule",{value:!0}),Object.keys(e).forEach(function(r){var o=Object.getOwnPropertyDescriptor(e,r);Object.defineProperty(n,r,o.get?o:{enumerable:!0,get:function(){return e[r]}})}),n}var uy={exports:{}},La={},cy={exports:{}},z={};/**
  * @license React
  * react.production.min.js
@@ -518,6 +519,30 @@ function SoundEffectsButton() {
   });
 }
 
+function GameFullscreenButton() {
+  const [full, setFull] = m.useState(isGameFullscreen);
+  m.useEffect(() => {
+    const update = () => setFull(isGameFullscreen());
+    document.addEventListener("fullscreenchange", update);
+    document.addEventListener("webkitfullscreenchange", update);
+    return () => {
+      document.removeEventListener("fullscreenchange", update);
+      document.removeEventListener("webkitfullscreenchange", update);
+    };
+  }, []);
+  if (!full && !canEnterGameFullscreen()) return null;
+  const label = full ? gameLabel("Exit fullscreen", "退出全屏") : gameLabel("Fullscreen", "全屏");
+  return y.jsx("button", {
+    type: "button", className: "game-button game-fullscreen",
+    "aria-label": label, "aria-pressed": full, title: label,
+    onClick: toggleGameFullscreen,
+    children: y.jsxs("span", {
+      className: "game-fullscreen__icon", "aria-hidden": true,
+      children: [y.jsx("span", {}), y.jsx("span", {}), y.jsx("span", {}), y.jsx("span", {})]
+    })
+  });
+}
+
 function WL({ bespoke }) {
   const { menuOpen, setMenuOpen } = UL();
   const { playEffect } = m.useContext(gameSession);
@@ -804,6 +829,7 @@ function GameSession({ holder, children }) {
     const checkpoint = saved.current.checkpoint;
     if (checkpoint) {
       holder.pushAndStore(checkpoint.scene, undefined, checkpoint.pattern ? { data: checkpoint.pattern } : {});
+      enterOnFirstGameAction();
     }
   }
 
@@ -816,7 +842,10 @@ function GameSession({ holder, children }) {
   return y.jsx(gameSession.Provider, {
     value: {
       save, resume, markEnding,
-      start: () => holder.pushAndStore("p1", undefined, {}),
+      start: () => {
+        holder.pushAndStore("p1", undefined, {});
+        enterOnFirstGameAction();
+      },
       toggleSound: () => update({ muted: !saved.current.muted }),
       toggleEffects: () => {
         playGameSound("wood");
@@ -833,6 +862,7 @@ function GameSession({ holder, children }) {
 function openChapter(holder, id) {
   if (id === "p1") holder.pushAndStore("p1", undefined, {});
   else holder.push(id);
+  enterOnFirstGameAction();
 }
 
 function gameSceneTitle(id) {
@@ -874,7 +904,7 @@ function GameFrame({ begin, debug, holder, chooses }) {
               }),
               y.jsxs("div", {
                 className: "game-header__actions",
-                children: [y.jsx(SoundEffectsButton, {}), y.jsx(WL, { bespoke: holder })]
+                children: [y.jsx(SoundEffectsButton, {}), y.jsx(GameFullscreenButton, {}), y.jsx(WL, { bespoke: holder })]
               })
             ]
           }),
