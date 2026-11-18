@@ -27,27 +27,63 @@
   flex: 1;
   align-items: center;
   min-width: 24px;
-  margin-inline: 8px;
+  margin-inline: clamp(12px, 1.6vw, 18px);
+  --undyed-ribbon:
+    repeating-linear-gradient(108deg, #a3c2f017 0 1px, transparent 1px 4px),
+    linear-gradient(180deg, #40557c, #263653);
+  --dyed-ribbon:
+    repeating-linear-gradient(115deg, #eff7f68f 0 1px, transparent 2px 7px, #173f8978 9px 11px, transparent 13px 17px),
+    linear-gradient(164deg, #e4f0e8 9%, #9bbde1 33%, #365caa 64%, #8cadd9 100%);
 }
 
 .game-player__timeline .game-player__progress {
   width: 100%;
   min-width: 0;
+  height: clamp(13px, 1.8vw, 17px);
+  border-radius: 0;
+  background: var(--undyed-ribbon);
+  clip-path: polygon(
+    0 31%, 5% 17%, 12% 8%, 19% 20%, 27% 6%, 34% 17%, 43% 7%,
+    51% 20%, 61% 10%, 69% 21%, 79% 7%, 88% 17%, 96% 10%, 100% 27%,
+    100% 74%, 93% 89%, 83% 80%, 75% 97%, 66% 85%, 56% 94%, 47% 80%,
+    37% 95%, 28% 81%, 20% 91%, 12% 80%, 4% 92%, 0 69%
+  );
+}
+
+.game-player__timeline .game-player__progress::-webkit-progress-bar {
+  background: var(--undyed-ribbon);
+}
+
+.game-player__timeline .game-player__progress::-webkit-progress-value {
+  background: var(--dyed-ribbon);
+}
+
+.game-player__timeline .game-player__progress::-moz-progress-bar {
+  background: var(--dyed-ribbon);
 }
 
 .game-player__dye-marker {
   position: absolute;
   top: 50%;
   left: var(--video-progress);
-  width: 21px;
-  height: 21px;
+  width: clamp(34px, 4.8vw, 40px);
+  height: clamp(34px, 4.8vw, 40px);
   transform: translate(-50%, -50%);
-  border: 1px solid #ebd6a7;
-  border-radius: 50%;
-  background: #263d74 url("/assets/artwork/dye-progress.webp") center / cover no-repeat;
-  box-shadow: 0 0 0 1px #101a37, 0 1px 5px #080e1a9c;
+  border: 2px solid #f4dfaa;
+  border-radius: 47% 53% 46% 54% / 55% 46% 54% 45%;
+  background: #19305f;
+  box-shadow: 0 0 0 1px #071731, 0 2px 5px #060b1ba0;
   pointer-events: none;
   transition: left .16s linear;
+}
+
+.game-player__dye-marker::before {
+  position: absolute;
+  inset: 2px;
+  border-radius: inherit;
+  background: #d6e4e6 url("/assets/artwork/dye-progress.webp") center / 145% no-repeat;
+  filter: contrast(1.35) saturate(1.55);
+  content: "";
 }
 
 @media (prefers-reduced-motion: reduce) {
