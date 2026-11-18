@@ -1,0 +1,293 @@
+.chapter-catalogue[role="dialog"] {
+  --chapter-border: #2a3e50;
+  --chapter-muted: #a5b8c9;
+  --chapter-surface: #152331;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: min(1080px, calc(100vw - 64px));
+  max-width: none;
+  height: min(740px, calc(100dvh - 64px));
+  margin: auto;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--chapter-border);
+  border-radius: 24px;
+  background: #0d1721;
+  color: #eef4f8;
+  box-shadow: 0 24px 96px #0009;
+  font-family: system-ui, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+.chapter-catalogue button {
+  text-align: left;
+  transition: color .16s ease, background-color .16s ease, border-color .16s ease;
+}
+
+.chapter-catalogue button:focus-visible {
+  outline: 2px solid #9cdbfb;
+  outline-offset: -3px;
+}
+
+.chapter-catalogue > button:last-child {
+  top: 18px;
+  right: 20px;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid #819bb56b;
+  border-radius: 50%;
+  background: #102033;
+  color: #f0f7ff;
+  opacity: 1;
+}
+
+.chapter-catalogue > button:last-child:hover {
+  background: #244359;
+}
+
+.chapter-catalogue__header {
+  position: relative;
+  flex: none;
+  padding: 27px 34px 25px;
+  border-bottom: 1px solid var(--chapter-border);
+  background:
+    linear-gradient(93deg, #142f47 12%, #173a55ee 46%, #182d49a8 74%, #722f356e),
+    url("/button-bg.webp") right center / 480px auto no-repeat,
+    #1b3350;
+}
+
+.chapter-catalogue__brand {
+  display: block;
+  margin-bottom: 8px;
+  color: #bce5fc;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .25em;
+}
+
+.chapter-catalogue .chapter-catalogue__title {
+  color: #f3f8fc;
+  font-size: clamp(25px, 4vw, 39px);
+  font-weight: 720;
+  letter-spacing: .055em;
+  line-height: 1.2;
+}
+
+.chapter-catalogue__count {
+  margin-top: 7px;
+  color: #c7daeb;
+  font-size: 13px;
+}
+
+.chapter-catalogue__views {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 34px;
+  border-bottom: 1px solid var(--chapter-border);
+}
+
+.chapter-catalogue__views button {
+  padding: 7px 14px;
+  border-radius: 8px;
+  color: var(--chapter-muted);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.chapter-catalogue__views button[aria-pressed="true"],
+.chapter-catalogue__views button:hover {
+  background: #20374a;
+  color: #f2f9ff;
+}
+
+.chapter-catalogue__body {
+  display: grid;
+  flex: 1;
+  grid-template-columns: 204px minmax(0, 1fr);
+  min-height: 0;
+}
+
+.chapter-catalogue__sections {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 21px 14px 20px 24px;
+  border-right: 1px solid var(--chapter-border);
+  background: #101c28;
+}
+
+.chapter-catalogue__sections button {
+  min-width: 0;
+  padding: 11px 13px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  color: #dce9f4;
+}
+
+.chapter-catalogue__sections button[aria-pressed="true"] {
+  border-color: #507e9a;
+  background: #20384b;
+  color: #f5faff;
+}
+
+.chapter-catalogue__sections button:hover {
+  background: #203244;
+}
+
+.chapter-catalogue__section-name,
+.chapter-catalogue__section-english,
+.chapter-catalogue__chapter,
+.chapter-catalogue__translation {
+  display: block;
+}
+
+.chapter-catalogue__section-name {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.chapter-catalogue__section-english {
+  margin-top: 2px;
+  color: #a5c1d9;
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: .09em;
+}
+
+.chapter-catalogue__scroll,
+.chapter-catalogue__map {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: #54728a #0d1721;
+}
+
+.chapter-catalogue__map {
+  flex: 1;
+}
+
+.chapter-catalogue__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 21px 24px;
+}
+
+.chapter-catalogue__grid button {
+  display: grid;
+  width: 100%;
+  min-height: 76px;
+  height: 100%;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 13px;
+  padding: 10px 14px;
+  border: 1px solid var(--chapter-border);
+  border-radius: 12px;
+  background: var(--chapter-surface);
+  color: #eff6fc;
+}
+
+.chapter-catalogue__grid button:hover,
+.chapter-catalogue__grid button[aria-current="true"] {
+  border-color: #6299b9;
+  background: #1d3448;
+}
+
+.chapter-catalogue__number {
+  min-width: 42px;
+  padding: 7px 5px;
+  border-radius: 9px;
+  background: #233d54;
+  color: #bde6fd;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.chapter-catalogue__chapter {
+  font-size: 15px;
+  font-weight: 680;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.chapter-catalogue__translation {
+  margin-top: 3px;
+  color: var(--chapter-muted);
+  font-size: 11px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.chapter-catalogue__arrow {
+  color: #adcbe2;
+  font-size: 24px;
+  line-height: 1;
+}
+
+@media (max-width: 760px) {
+  .chapter-catalogue[role="dialog"] {
+    width: 100%;
+    height: 100dvh;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .chapter-catalogue__header {
+    padding: max(20px, env(safe-area-inset-top)) 18px 17px;
+    background-position: center, right center;
+  }
+
+  .chapter-catalogue__views {
+    padding: 8px 14px;
+  }
+
+  .chapter-catalogue__body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .chapter-catalogue__sections {
+    flex-direction: row;
+    gap: 6px;
+    padding: 9px 12px;
+    border-right: 0;
+    border-bottom: 1px solid var(--chapter-border);
+  }
+
+  .chapter-catalogue__sections button {
+    flex: 1;
+    padding: 7px 5px;
+    text-align: center;
+  }
+
+  .chapter-catalogue__section-name {
+    font-size: 13px;
+  }
+
+  .chapter-catalogue__grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    padding: 12px 14px max(16px, env(safe-area-inset-bottom));
+  }
+
+  .chapter-catalogue__grid button {
+    min-height: 63px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chapter-catalogue[role="dialog"],
+  .chapter-catalogue button {
+    animation: none;
+    transition: none;
+  }
+}

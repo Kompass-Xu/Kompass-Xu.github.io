@@ -151,7 +151,198 @@ Error generating stack: `+i.message+`
 
 If you want to hide the \`${t.titleName}\`, you can wrap it with our VisuallyHidden component.
 
-For more information, see https://radix-ui.com/primitives/docs/components/${t.docsSlug}`;return m.useEffect(()=>{e&&(document.getElementById(e)||console.error(n))},[n,e]),null},LL="DialogDescriptionWarning",DL=({contentRef:e,descriptionId:t})=>{const r=`Warning: Missing \`Description\` or \`aria-describedby={undefined}\` for {${J1(LL).contentName}}.`;return m.useEffect(()=>{var i;const o=(i=e.current)==null?void 0:i.getAttribute("aria-describedby");t&&o&&(document.getElementById(t)||console.warn(r))},[r,e,t]),null},eb=$1,tb=z1,nb=U1,dl=W1,pl=H1,hl=G1,ml=X1,rb=Z1;const IL=eb,VL=tb,$L=nb,ob=m.forwardRef(({className:e,...t},n)=>y.jsx(dl,{className:de("fixed inset-0 z-50 bg-black/75  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",e),...t,ref:n}));ob.displayName=dl.displayName;const FL=B0("fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-500",{variants:{side:{top:"inset-x-0 top-0 border-b data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",bottom:"inset-x-0 bottom-0 border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",left:"inset-y-0 left-0 h-full w-3/4 border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:max-w-sm",right:"inset-y-0 right-0 h-full w-3/4  border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm"}},defaultVariants:{side:"right"}}),ib=m.forwardRef(({side:e="right",className:t,children:n,...r},o)=>y.jsxs($L,{children:[y.jsx(ob,{}),y.jsxs(pl,{ref:o,className:de(FL({side:e}),t),...r,children:[n,y.jsxs(rb,{className:"absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary",children:[y.jsx(Z0,{className:"w-4 h-4"}),y.jsx("span",{className:"sr-only",children:"Close"})]})]})]}));ib.displayName=pl.displayName;const sb=({className:e,...t})=>y.jsx("div",{className:de("flex flex-col space-y-2 text-center sm:text-left",e),...t});sb.displayName="SheetHeader";const ab=m.forwardRef(({className:e,...t},n)=>y.jsx(hl,{ref:n,className:de("text-lg font-semibold text-foreground",e),...t}));ab.displayName=hl.displayName;const zL=m.forwardRef(({className:e,...t},n)=>y.jsx(ml,{ref:n,className:de("text-sm text-muted-foreground",e),...t}));zL.displayName=ml.displayName;const lb=m.createContext(void 0);function BL({children:e}){const[t,n]=m.useState(!0);return y.jsx(lb.Provider,{value:{menuOpen:t,setMenuOpen:n},children:e})}function UL(){const e=m.useContext(lb);if(!e)throw new Error("should be use in a context provider");return e}function WL({bespoke:e,className:t,...n}){const{menuOpen:r,setMenuOpen:o}=UL();return b1("tab",()=>o(i=>!i)),y.jsx("div",{className:de("rounded bg-secondary/45 text-secondary-foreground shadow-md",t),...n,children:y.jsxs(IL,{open:r,onOpenChange:o,children:[y.jsxs(VL,{className:"flex items-center gap-2 p-2 text-sm outline-none",children:[y.jsx(QT,{className:"size-4"}),"Tab"]}),y.jsxs(ib,{className:"flex flex-col w-full sm:max-w-[100vw] shadow bg-secondary/50",children:[y.jsx(sb,{children:y.jsx(ab,{children:"TIE-DYE CATELOGUE"})}),y.jsx("div",{className:"w-full h-full overflow-auto",children:y.jsx(HL,{bespoke:e})})]})]})})}const ku=new Map,HL=({bespoke:e})=>{const{loading:t,value:n=""}=BM(async()=>{if(ku.has("minimap.svg"))return ku.get("minimap.svg");const o=await(await fetch("/minimap.svg")).text();return ku.set("minimap.svg",o),o});return t?y.jsx("div",{className:"flex items-center justify-center h-full",children:y.jsx(tk,{className:" animate-spin"})}):y.jsx(KL,{value:n,bespoke:e})};function KL({ value, bespoke }) {
+For more information, see https://radix-ui.com/primitives/docs/components/${t.docsSlug}`;return m.useEffect(()=>{e&&(document.getElementById(e)||console.error(n))},[n,e]),null},LL="DialogDescriptionWarning",DL=({contentRef:e,descriptionId:t})=>{const r=`Warning: Missing \`Description\` or \`aria-describedby={undefined}\` for {${J1(LL).contentName}}.`;return m.useEffect(()=>{var i;const o=(i=e.current)==null?void 0:i.getAttribute("aria-describedby");t&&o&&(document.getElementById(t)||console.warn(r))},[r,e,t]),null},eb=$1,tb=z1,nb=U1,dl=W1,pl=H1,hl=G1,ml=X1,rb=Z1;const IL=eb,VL=tb,$L=nb,ob=m.forwardRef(({className:e,...t},n)=>y.jsx(dl,{className:de("fixed inset-0 z-50 bg-black/75  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",e),...t,ref:n}));ob.displayName=dl.displayName;const FL=B0("fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-500",{variants:{side:{top:"inset-x-0 top-0 border-b data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",bottom:"inset-x-0 bottom-0 border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",left:"inset-y-0 left-0 h-full w-3/4 border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:max-w-sm",right:"inset-y-0 right-0 h-full w-3/4  border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm"}},defaultVariants:{side:"right"}}),ib=m.forwardRef(({side:e="right",className:t,children:n,...r},o)=>y.jsxs($L,{children:[y.jsx(ob,{}),y.jsxs(pl,{ref:o,className:de(FL({side:e}),t),...r,children:[n,y.jsxs(rb,{className:"absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary",children:[y.jsx(Z0,{className:"w-4 h-4"}),y.jsx("span",{className:"sr-only",children:"Close"})]})]})]}));ib.displayName=pl.displayName;const sb=({className:e,...t})=>y.jsx("div",{className:de("flex flex-col space-y-2 text-center sm:text-left",e),...t});sb.displayName="SheetHeader";const ab=m.forwardRef(({className:e,...t},n)=>y.jsx(hl,{ref:n,className:de("text-lg font-semibold text-foreground",e),...t}));ab.displayName=hl.displayName;const zL=m.forwardRef(({className:e,...t},n)=>y.jsx(ml,{ref:n,className:de("text-sm text-muted-foreground",e),...t}));zL.displayName=ml.displayName;const lb=m.createContext(void 0);function BL({children:e}){const[t,n]=m.useState(!0);return y.jsx(lb.Provider,{value:{menuOpen:t,setMenuOpen:n},children:e})}function UL(){const e=m.useContext(lb);if(!e)throw new Error("should be use in a context provider");return e}const catalogueChapters = [
+  {"number":"1","title":"开始页面","english":"BEGIN"},
+  {"number":"2","title":"天降飞贼","english":"Snitch from the sky"},
+  {"number":"3","title":"继续追！","english":"Keep chasing"},
+  {"number":"4","title":"抄小道","english":"take the shortcut"},
+  {"number":"5","title":"来到院落","english":"Come to the compound"},
+  {"number":"6","title":"偶遇大师","english":"Encounter the Master"},
+  {"number":"8","title":"先扎和后染","english":"TIE or DYE"},
+  {"number":"9","title":"搞一根木棍","english":"Get a stick"},
+  {"number":"10","title":"抢嘴里的","english":"Grab from mouth"},
+  {"number":"11","title":"等老师回来","english":"Wait for teacher"},
+  {"number":"12","title":"扎法的选择","english":"Choose how to tie"},
+  {"number":"13","title":"扎法的选择页面","english":"How to tie?"},
+  {"number":"14","title":"平铺麻布","english":"Tile linen"},
+  {"number":"15","title":"立柱木棍，抵住麻布","english":"Pillar sticks, against the linen"},
+  {"number":"16","title":"旋转木棍","english":"Spinner sticks"},
+  {"number":"17","title":"拿起皮筋绑麻布(上）","english":"Pick up a rubber band and tie the burlap（①）"},
+  {"number":"18","title":"拿起皮筋绑麻布(下）","english":"Pick up a rubber band and tie the burlap（②）"},
+  {"number":"19","title":"螺旋纹的展示","english":"Spiral pattern DISPLAY"},
+  {"number":"20","title":"用丝巾卷绳子","english":"Roll the rope with a silk scarf"},
+  {"number":"21","title":"抽紧丝巾","english":"Tighten the scarf"},
+  {"number":"22","title":"扎紧绳子打活结","english":"Tie the rope in a slipknot"},
+  {"number":"23","title":"鱼鳞纹的展示","english":"Fish scales pattern DISPLAY"},
+  {"number":"24","title":"叠方巾","english":"Folded square scarf"},
+  {"number":"25","title":"折方巾","english":"Folded square scarf"},
+  {"number":"26","title":"夹方巾","english":"Clip square scarf"},
+  {"number":"27","title":"捆方巾","english":"Tie square scarf"},
+  {"number":"28","title":"拆方巾","english":"Dismantle the square scarf"},
+  {"number":"29","title":"棱形纹的展示","english":"Prismatic pattern DISPLAY"},
+  {"number":"30","title":"装石子","english":"Fill the stones"},
+  {"number":"31","title":"捆石子","english":"Bundle the stones"},
+  {"number":"32","title":"拆皮筋","english":"Remove the rubber bands"},
+  {"number":"33","title":"包物扎的展示","english":"Stone-wrapping pattern DISPLAY"},
+  {"number":"34","title":"来到染坊","english":"Come to the dyeing house"},
+  {"number":"35","title":"用水浸泡","english":"Soak in water"},
+  {"number":"36","title":"浸入染缸","english":"Immerse in a dye vat"},
+  {"number":"37","title":"搅拌染缸","english":"Stir the dye vat"},
+  {"number":"37-1","title":"制染原料","english":"Raw materials for dyeing"},
+  {"number":"38","title":"捞出方巾","english":"Remove the square"},
+  {"number":"39","title":"展现氧化","english":"Exhibits oxidation"},
+  {"number":"40","title":"成品1.螺旋纹","english":"Finished product 1. Spiral pattern"},
+  {"number":"41","title":"结局一","english":"THE ENDING 1"},
+  {"number":"42","title":"成品2.鱼鳞纹","english":"Finished product 2. Fish scale pattern"},
+  {"number":"43","title":"结局二","english":"THE ENDING 2"},
+  {"number":"44","title":"成品3.棱形纹","english":"Finished product 3. Prismatic pattern"},
+  {"number":"45","title":"结局三","english":"THE ENDING 3"},
+  {"number":"46","title":"成品4.包物扎","english":"Finished product 4. Stone-wrapping pattern"},
+  {"number":"47","title":"结局四","english":"THE ENDING 4"}
+];
+const catalogueSections = [
+  { name: "故事引入", english: "THE STORY", start: 1, end: 8 },
+  { name: "扎结技法", english: "TIE", start: 9, end: 33 },
+  { name: "染色与结局", english: "DYE & ENDINGS", start: 34, end: 47 }
+];
+
+function WL({ bespoke, className, ...props }) {
+  const { menuOpen, setMenuOpen } = UL();
+  b1("tab", event => {
+    if (menuOpen) return;
+    event.preventDefault();
+    setMenuOpen(true);
+  });
+
+  return y.jsx("div", {
+    className: de("rounded bg-secondary/45 text-secondary-foreground shadow-md", className),
+    ...props,
+    children: y.jsxs(IL, {
+      open: menuOpen,
+      onOpenChange: setMenuOpen,
+      children: [
+        y.jsxs(VL, {
+          className: "flex items-center gap-2 p-2 text-sm outline-none",
+          children: [y.jsx(QT, { className: "size-4" }), "Tab"]
+        }),
+        y.jsx(ib, {
+          className: "chapter-catalogue",
+          "aria-describedby": undefined,
+          children: y.jsx(ChapterCatalogue, { bespoke, onClose: () => setMenuOpen(false) })
+        })
+      ]
+    })
+  });
+}
+
+function ChapterCatalogue({ bespoke, onClose }) {
+  const [showMap, setShowMap] = m.useState(false);
+  const [active, setActive] = m.useState(bespoke.active);
+  const currentNumber = active.name.slice(1);
+  const [sectionIndex, selectSection] = m.useState(() => {
+    const number = Number(bespoke.active.name.slice(1));
+    return Math.max(0, catalogueSections.findIndex(section => number >= section.start && number <= section.end));
+  });
+  const scrollArea = m.useRef(null);
+
+  m.useEffect(() => {
+    bespoke.on("onActiveChange", setActive);
+    return () => bespoke.off("onActiveChange", setActive);
+  }, [bespoke]);
+
+  const section = catalogueSections[sectionIndex];
+  const chapters = catalogueChapters.filter(chapter => {
+    const number = Number.parseInt(chapter.number, 10);
+    return number >= section.start && number <= section.end;
+  });
+
+  return y.jsxs(y.Fragment, {
+    children: [
+      y.jsxs("header", {
+        className: "chapter-catalogue__header",
+        children: [
+          y.jsx("span", { className: "chapter-catalogue__brand", children: "TIE-DYE" }),
+          y.jsx(ab, { className: "chapter-catalogue__title", children: "扎染章节目录" }),
+          y.jsx("p", { className: "chapter-catalogue__count", children: `${catalogueChapters.length} 个章节` })
+        ]
+      }),
+      y.jsxs("div", {
+        className: "chapter-catalogue__views",
+        role: "group",
+        "aria-label": "目录显示方式",
+        children: [
+          y.jsx("button", {
+            type: "button", "aria-pressed": !showMap, onClick: () => setShowMap(false), children: "章节列表"
+          }),
+          y.jsx("button", {
+            type: "button", "aria-pressed": showMap, onClick: () => setShowMap(true), children: "流程图"
+          })
+        ]
+      }),
+      showMap
+        ? y.jsx("div", { className: "chapter-catalogue__map", children: y.jsx(HL, { bespoke }) })
+        : y.jsxs("div", {
+            className: "chapter-catalogue__body",
+            children: [
+              y.jsx("nav", {
+                className: "chapter-catalogue__sections",
+                "aria-label": "章节分组",
+                children: catalogueSections.map((item, index) => y.jsxs("button", {
+                  type: "button",
+                  "aria-pressed": sectionIndex === index,
+                  onClick: () => {
+                    selectSection(index);
+                    scrollArea.current?.scrollTo(0, 0);
+                  },
+                  children: [
+                    y.jsx("span", { className: "chapter-catalogue__section-name", children: item.name }),
+                    y.jsx("span", { className: "chapter-catalogue__section-english", children: item.english })
+                  ]
+                }, item.name))
+              }),
+              y.jsx("div", {
+                ref: scrollArea,
+                className: "chapter-catalogue__scroll",
+                children: y.jsx("ol", {
+                  className: "chapter-catalogue__grid",
+                  "aria-label": section.name,
+                  children: chapters.map(chapter => {
+                    // The exported map uses chapter 37 for both of its labels.
+                    const id = "p" + Number.parseInt(chapter.number, 10);
+                    return y.jsx("li", {
+                      children: y.jsxs("button", {
+                        type: "button",
+                        "aria-current": chapter.number === currentNumber ? "true" : undefined,
+                        onClick: () => {
+                          bespoke.push(id);
+                          onClose();
+                        },
+                        children: [
+                          y.jsx("span", {
+                            className: "chapter-catalogue__number",
+                            children: chapter.number.padStart(2, "0")
+                          }),
+                          y.jsxs("span", {
+                            className: "chapter-catalogue__label",
+                            children: [
+                              y.jsx("span", { className: "chapter-catalogue__chapter", children: chapter.title }),
+                              y.jsx("span", { className: "chapter-catalogue__translation", lang: "en", children: chapter.english })
+                            ]
+                          }),
+                          y.jsx("span", { className: "chapter-catalogue__arrow", "aria-hidden": true, children: "›" })
+                        ]
+                      })
+                    }, chapter.number);
+                  })
+                })
+              })
+            ]
+          })
+    ]
+  });
+}
+
+const ku=new Map,HL=({bespoke:e})=>{const{loading:t,value:n=""}=BM(async()=>{if(ku.has("minimap.svg"))return ku.get("minimap.svg");const o=await(await fetch("/minimap.svg")).text();return ku.set("minimap.svg",o),o});return t?y.jsx("div",{className:"flex items-center justify-center h-full",children:y.jsx(tk,{className:" animate-spin"})}):y.jsx(KL,{value:n,bespoke:e})};function KL({ value, bespoke }) {
   const [active, setActive] = m.useState(bespoke.active);
   const { setMenuOpen } = UL();
   const mapRef = m.useRef(null);
