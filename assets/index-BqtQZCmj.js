@@ -1217,21 +1217,39 @@ const patternNames = {
   "Stone-wrapping": ["Stone Wrap", "包物扎"]
 };
 
-function mS({ bespoke, items }) {
+function mS({ bespoke, items, initialActive = 0, expandedShare }) {
+  const [selected, setSelected] = m.useState(initialActive);
+  const { playEffect } = m.useContext(gameSession);
+  const previews = m.useRef([]);
   const pairing = items.length === 2;
   const tied = Object.values(patternNames).find(words => words[1] === bespoke.data.data);
+  const collapsedShare = (100 - expandedShare) / (items.length - 1);
+  const tracks = items.map((_, index) => `minmax(0, ${index === selected ? expandedShare : collapsedShare}fr)`).join(" ");
+
+  function navigate(event, index) {
+    const change = { ArrowLeft: -1, ArrowUp: -1, ArrowRight: 1, ArrowDown: 1 }[event.key];
+    if (!change) return;
+    event.preventDefault();
+    const next = (index + change + items.length) % items.length;
+    setSelected(next);
+    previews.current[next]?.focus();
+    playEffect(items[next].title === "DYE" ? "water" : "cloth");
+  }
+
   return y.jsxs("main", {
     className: "game-choices",
     children: [
       y.jsx("h1", {
-        children: pairing ? gameWords("What will you do next?", "接下来做什么？") :
-          gameWords("Choose a pattern", "想扎出哪种花纹？")
+        className: "game-choices__heading",
+        children: pairing ? gameWords("Tie or Dye", "扎和染的选择") :
+          gameWords("Choose a Tying Technique", "扎法的选择")
       }),
       y.jsx("div", {
         className: "game-choices__grid",
-        "data-count": items.length,
-        children: items.map(item => {
+        style: { "--choice-tracks": tracks },
+        children: items.map((item, index) => {
           const [english, chinese] = patternNames[item.title];
+          const active = index === selected;
           const description = !pairing ? null : item.title === "TIE"
             ? ["Explore traditional ways of tying fabric to create distinct patterns.", "学习不同的扎结技巧，让布料形成独特花纹。"]
             : item.disabled
@@ -1239,18 +1257,40 @@ function mS({ bespoke, items }) {
               : tied
                 ? [`Dye your ${tied[0].toLowerCase()} fabric and see how the pattern turns out.`, `把扎好的${tied[1]}放进染缸，看看成品。`]
                 : ["Dye your fabric and reveal the pattern.", "把布料放进染缸，看看成品。"];
+          const sound = item.title === "DYE" ? "water" : "cloth";
           return y.jsxs("article", {
             className: "game-choice",
-            style: { "--choice-art": `url("${item.bg}")` },
+            "data-active": active,
+            "data-choice": item.title,
             children: [
-              y.jsx("h2", { children: gameWords(english, chinese) }),
-              pairing && y.jsx("p", { children: gameWords(...description) }),
+              y.jsx("img", {
+                className: "game-choice__art", src: item.bg, alt: "", decoding: "async",
+                fetchPriority: index === initialActive ? "high" : "auto"
+              }),
               y.jsx("button", {
-                type: "button", className: "game-button game-button--primary",
-                disabled: item.disabled, "data-sound": item.title === "DYE" ? "water" : "cloth",
-                onClick: item.onCallback || (() => bespoke.next(item.chooses)),
-                children: item.disabled ? gameWords("Locked", "尚未解锁") :
-                  gameWords("Choose " + english.toLowerCase(), "选择" + chinese)
+                className: "game-choice__preview",
+                type: "button",
+                ref: node => { previews.current[index] = node; },
+                "aria-label": gameLabel("Preview " + english, "预览" + chinese),
+                "aria-pressed": active,
+                "data-sound": sound,
+                onClick: () => setSelected(index),
+                onKeyDown: event => navigate(event, index),
+                children: !active && y.jsx("span", { className: "game-choice__rail", children: gameWords(english, chinese) })
+              }),
+              active && y.jsxs("div", {
+                className: "game-choice__body",
+                children: [
+                  y.jsx("h2", { children: gameWords(english, chinese) }),
+                  description && y.jsx("p", { children: gameWords(...description) }),
+                  y.jsx("button", {
+                    type: "button", className: "game-button game-button--primary",
+                    disabled: item.disabled, "data-sound": sound,
+                    onClick: item.onCallback || (() => bespoke.next(item.chooses)),
+                    children: item.disabled ? gameWords("Locked", "尚未解锁") :
+                      gameWords("Choose " + english.toLowerCase(), "选择" + chinese)
+                  })
+                ]
               })
             ]
           }, item.title);
@@ -1260,7 +1300,7 @@ function mS({ bespoke, items }) {
   });
 }
 
-const m$={name:"扎法的选择",nexts:["p14","p20","p24","p30"]},g$=[{title:"Spiral",buttonText:"Spiral Pattern",chooses:{next:"p14"},bg:"/spiral.png"},{title:"Fish Scales",buttonText:"Fish Scales Pattern",chooses:{next:"p20"},bg:"/fish.png"},{title:"Prismatic",buttonText:"Prismatic Pattern",chooses:{next:"p24"},bg:"/prismatic.png"},{title:"Stone-wrapping",buttonText:"Stone-wrapping Parttern",chooses:{next:"p30"},bg:"/stone.png"}];function y$(){const e=D();return y.jsx(mS,{bespoke:e,items:g$,pertentage:45})}const v$=Object.freeze(Object.defineProperty({__proto__:null,default:y$,opts:m$},Symbol.toStringTag,{value:"Module"})),x$={name:"扎法的选择很多",nexts:["p13"]};function w$(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/12.mp4",playing:!0,children:[{key:"p13",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:()=>e.next()})}]}})}const b$=Object.freeze(Object.defineProperty({__proto__:null,default:w$,opts:x$},Symbol.toStringTag,{value:"Module"})),S$={name:"搞一根木棍",nexts:["p10","p11"],condition:e=>e.next==="p9"};function P$(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/9.mp4",playing:!0,children:[{key:"p10",position:{left:400,bottom:150},component:y.jsx(ja,{onClick:()=>e.push("p10"),children:gameWords("Grab the stick","抢嘴里的木棍")})},{key:"p11",position:{right:400,bottom:150},component:y.jsx(ja,{onClick:()=>e.push("p11"),children:gameWords("Wait for the master","等老师回来")})}]}})}const _$=Object.freeze(Object.defineProperty({__proto__:null,default:P$,opts:S$},Symbol.toStringTag,{value:"Module"})),E$={name:"扎和染的选择",nexts:["p9","p34"]};function C$(){const e=D(),t=m.useMemo(()=>[{title:"TIE",description:"You'll explore the variety of wonderful ties that produce different beautiful patterns on the linen",buttonText:"TIE",chooses:{next:"p9"},bg:"f4d07d78dca4782d6f20cb233bb8457.jpg",onCallback:()=>e.push(bn(e.data)?"p9":"p13")},{title:"DYE",description:"After choosing one of the ties, you will experience the dyeing process and eventually enjoy the corresponding patterns, one of which is your mother's favorite.",buttonText:"DYE",chooses:{next:"p34"},disabled:bn(e.data),bg:"569119c037b93acef424214c6e70ec9.jpg",tooltip:bn(e.data)?"Tip:At least one method of tie can becompleted before the staining interfacecan be opened.(After completing page 19.23.29.33)":void 0}],[e.data,e]);return y.jsx(mS,{bespoke:e,initialActive:bn(e.data)?0:1,items:t,pertentage:70})}const T$=Object.freeze(Object.defineProperty({__proto__:null,default:C$,opts:E$},Symbol.toStringTag,{value:"Module"})),k$={name:"从侧面几乎抓住",nexts:["p5"]};function j$(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/4.mp4",playing:!0,children:[{key:"timeout",position:{left:600,top:400},component:y.jsx(Tb,{timeout:3}),visible:t=>t>4.5&&t<7.5},{key:"p4",position:{left:600,top:400},component:y.jsx(Cb,{}),visible:t=>t>7.5&&t<11}],onEnded:()=>e.next()}})}const O$=Object.freeze(Object.defineProperty({__proto__:null,default:j$,opts:k$},Symbol.toStringTag,{value:"Module"})),A$={name:"结尾",nexts:[]};function R$(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"/videos/end.mp4",playing:!0,children:[{key:"end",position:{bottom:50,left:768},component:y.jsx(me,{label:["Return home","回到首页"],onCallback:()=>e.pushAndStore("preview",void 0,{})})}]}})}const M$=Object.freeze(Object.defineProperty({__proto__:null,default:R$,opts:A$},Symbol.toStringTag,{value:"Module"}))
+const m$={name:"扎法的选择",nexts:["p14","p20","p24","p30"]},g$=[{title:"Spiral",buttonText:"Spiral Pattern",chooses:{next:"p14"},bg:"/spiral.png"},{title:"Fish Scales",buttonText:"Fish Scales Pattern",chooses:{next:"p20"},bg:"/fish.png"},{title:"Prismatic",buttonText:"Prismatic Pattern",chooses:{next:"p24"},bg:"/prismatic.png"},{title:"Stone-wrapping",buttonText:"Stone-wrapping Parttern",chooses:{next:"p30"},bg:"/stone.png"}];function y$(){const e=D();return y.jsx(mS,{bespoke:e,items:g$,expandedShare:45})}const v$=Object.freeze(Object.defineProperty({__proto__:null,default:y$,opts:m$},Symbol.toStringTag,{value:"Module"})),x$={name:"扎法的选择很多",nexts:["p13"]};function w$(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/12.mp4",playing:!0,children:[{key:"p13",position:{bottom:50,left:768},component:y.jsx(me,{onCallback:()=>e.next()})}]}})}const b$=Object.freeze(Object.defineProperty({__proto__:null,default:w$,opts:x$},Symbol.toStringTag,{value:"Module"})),S$={name:"搞一根木棍",nexts:["p10","p11"],condition:e=>e.next==="p9"};function P$(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/9.mp4",playing:!0,children:[{key:"p10",position:{left:400,bottom:150},component:y.jsx(ja,{onClick:()=>e.push("p10"),children:gameWords("Grab the stick","抢嘴里的木棍")})},{key:"p11",position:{right:400,bottom:150},component:y.jsx(ja,{onClick:()=>e.push("p11"),children:gameWords("Wait for the master","等老师回来")})}]}})}const _$=Object.freeze(Object.defineProperty({__proto__:null,default:P$,opts:S$},Symbol.toStringTag,{value:"Module"})),E$={name:"扎和染的选择",nexts:["p9","p34"]};function C$(){const e=D(),t=m.useMemo(()=>[{title:"TIE",description:"You'll explore the variety of wonderful ties that produce different beautiful patterns on the linen",buttonText:"TIE",chooses:{next:"p9"},bg:"/f4d07d78dca4782d6f20cb233bb8457.jpg",onCallback:()=>e.push(bn(e.data)?"p9":"p13")},{title:"DYE",description:"After choosing one of the ties, you will experience the dyeing process and eventually enjoy the corresponding patterns, one of which is your mother's favorite.",buttonText:"DYE",chooses:{next:"p34"},disabled:bn(e.data),bg:"/569119c037b93acef424214c6e70ec9.jpg",tooltip:bn(e.data)?"Tip:At least one method of tie can becompleted before the staining interfacecan be opened.(After completing page 19.23.29.33)":void 0}],[e.data,e]);return y.jsx(mS,{bespoke:e,initialActive:bn(e.data)?0:1,items:t,expandedShare:70})}const T$=Object.freeze(Object.defineProperty({__proto__:null,default:C$,opts:E$},Symbol.toStringTag,{value:"Module"})),k$={name:"从侧面几乎抓住",nexts:["p5"]};function j$(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"https://kompass.oss-cn-beijing.aliyuncs.com/videos/4.mp4",playing:!0,children:[{key:"timeout",position:{left:600,top:400},component:y.jsx(Tb,{timeout:3}),visible:t=>t>4.5&&t<7.5},{key:"p4",position:{left:600,top:400},component:y.jsx(Cb,{}),visible:t=>t>7.5&&t<11}],onEnded:()=>e.next()}})}const O$=Object.freeze(Object.defineProperty({__proto__:null,default:j$,opts:k$},Symbol.toStringTag,{value:"Module"})),A$={name:"结尾",nexts:[]};function R$(){const e=D();return y.jsx(I,{bespoke:e,volumne:!0,video:{url:"/videos/end.mp4",playing:!0,children:[{key:"end",position:{bottom:50,left:768},component:y.jsx(me,{label:["Return home","回到首页"],onCallback:()=>e.pushAndStore("preview",void 0,{})})}]}})}const M$=Object.freeze(Object.defineProperty({__proto__:null,default:R$,opts:A$},Symbol.toStringTag,{value:"Module"}))
 ;
 const N$={name:"AR非遗扎染",nexts:["p2"]};
 function F$(){return y.jsx(GameIntro,{})}

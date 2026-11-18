@@ -213,28 +213,114 @@
   text-shadow: 0 1px 4px #000;
 }
 
-.game-choices h1 > .game-words,
-.game-choice h2 > .game-words {
-  font-family: Georgia, "Times New Roman", "Microsoft YaHei", serif;
+.game-shell:is([data-scene="p8"], [data-scene="p13"]) {
+  position: relative;
 }
 
-.game-choices h1 > .game-words > [lang="zh-CN"] {
-  color: var(--brocade-thread);
+.game-shell:is([data-scene="p8"], [data-scene="p13"]) .game-header {
+  position: absolute;
+  z-index: 2;
+  inset: 0 0 auto;
+  border-color: transparent;
+  background: linear-gradient(180deg, #080e21ec, #11172e30);
+}
+
+.game-shell:is([data-scene="p8"], [data-scene="p13"]) .game-header__title {
+  text-shadow: 0 1px 6px #000;
+}
+
+@media (min-width: 761px), (orientation: landscape) {
+  .game-shell:is([data-scene="p8"], [data-scene="p13"]) .game-header__title {
+    display: none;
+  }
+}
+
+.game-choices__heading {
+  color: #fff9ef;
+  font-family: Georgia, "Times New Roman", "Microsoft YaHei", serif;
+  font-size: clamp(21px, 2.45vw, 40px);
+  font-weight: 700;
+  text-shadow: 0 1px 5px #0c1429, 0 2px 18px #0c1429;
+}
+
+.game-choices__heading .game-words > [lang="zh-CN"] {
+  color: #fff3d8;
 }
 
 .game-choice {
-  border-color: #9ea9c18f;
-  background: linear-gradient(0deg, #111837fc 9%, #142348dc 39%, #142d6b12 91%), var(--choice-art) center / cover, #182648;
-  box-shadow: inset 0 0 0 4px #111a2cba, inset 0 0 0 5px #e0c79065, 0 10px 24px #03070e50;
+  background: #1c2c50;
+  box-shadow: inset -1px 0 #f3dead8f;
 }
 
-.game-choice h2 {
+.game-choice::after {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: linear-gradient(180deg, #0710207a 0%, transparent 30% 54%, #070f23b9 81%, #080d20ef 100%);
+  content: "";
+  pointer-events: none;
+}
+
+.game-choice__art {
+  filter: brightness(.76);
+  transition: filter .35s ease;
+}
+
+.game-choice[data-active="true"] .game-choice__art,
+.game-choice:focus-within .game-choice__art,
+.game-choice:hover .game-choice__art {
+  filter: none;
+}
+
+.game-choice__body,
+.game-choice__rail {
   color: #fff9ed;
+  text-shadow: 0 2px 5px #070b18, 0 3px 18px #0a1020;
 }
 
-.game-choice p .game-words {
-  gap: .45em;
-  line-height: 1.45;
+.game-choice__rail,
+.game-choice__body h2 {
+  font-family: "Tie-Dye Original", Georgia, "Microsoft YaHei", serif;
+  font-weight: 700;
+}
+
+.game-choice__rail {
+  font-size: clamp(15px, 1.9vw, 34px);
+}
+
+.game-choice__body h2 {
+  font-size: clamp(28px, 5.6vw, 90px);
+}
+
+.game-choice__body h2 .game-words {
+  gap: .05em;
+  line-height: 1.04;
+}
+
+.game-choice h2 .game-words > [lang="zh-CN"],
+.game-choice__rail .game-words > [lang="zh-CN"] {
+  color: #fff1d1;
+}
+
+.game-choice__body h2 .game-words > [lang="zh-CN"] {
+  font-family: system-ui, "Microsoft YaHei", sans-serif;
+  font-size: .49em;
+}
+
+.game-choice__body p {
+  max-width: 45ch;
+  font-size: clamp(13px, 1.5vw, 22px);
+}
+
+.game-choice__body p .game-words {
+  gap: .35em;
+  line-height: 1.34;
+}
+
+.game-choice__body .game-button {
+  min-width: min(180px, 100%);
+  padding-inline: 22px;
+  font-size: clamp(14px, 1.4vw, 19px);
 }
 
 .game-intro {
@@ -485,12 +571,39 @@
   .game-directory svg {
     display: none;
   }
+}
 
-  .game-choice button {
-    white-space: normal;
+@media (orientation: portrait) and (max-width: 760px) {
+  .game-shell:is([data-scene="p8"], [data-scene="p13"]) .game-header {
+    background: linear-gradient(180deg, #182547, #141e37);
+  }
+
+  .game-choices {
+    padding-top: calc(64px + env(safe-area-inset-top));
+  }
+
+  .game-choice {
+    box-shadow: inset 0 -1px #f3dead8f;
+  }
+
+  .game-choice::after {
+    background: linear-gradient(180deg, #10192e15 10%, transparent 32%, #0a1227b0 77%, #080d1ee0);
+  }
+
+  .game-choice__body {
+    padding-bottom: max(15px, env(safe-area-inset-bottom));
+  }
+
+  .game-choice__body h2 {
+    font-size: clamp(26px, 9vw, 52px);
+  }
+
+  .game-choice__rail {
+    font-size: clamp(15px, 4.2vw, 26px);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .game-loading__ring { animation: none; }
+  .game-choice__art { transition: none; }
 }
