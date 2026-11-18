@@ -55,7 +55,7 @@
   border-bottom: 1px solid var(--chapter-border);
   background:
     linear-gradient(93deg, #142f47 12%, #173a55ee 46%, #182d49a8 74%, #722f356e),
-    url("/button-bg.webp") right center / 480px auto no-repeat,
+    url("/assets/artwork/button-bg.webp") right center / 480px auto no-repeat,
     #1b3350;
 }
 

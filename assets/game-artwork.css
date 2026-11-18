@@ -26,13 +26,13 @@
   --brocade-light: #f3f6ff;
   --brocade-button:
     linear-gradient(0deg, #142039a6, #152d5770),
-    url("/button-bg.webp") center / cover;
+    url("/assets/artwork/button-bg.webp") center / cover;
 }
 
 .game-shell {
   background:
     radial-gradient(ellipse at 48% 35%, #202d58e8 0%, #121b36f4 48%, #090e1bed 88%),
-    url("/drop-bg-hh.webp") center / 540px auto;
+    url("/assets/artwork/drop-bg-hh.webp") center / 540px auto;
 }
 
 .game-header,
@@ -40,7 +40,7 @@
   border-color: #8492b24d;
   background:
     linear-gradient(90deg, #19274bf5, #14203afc 48%, #263350f2),
-    url("/button-bg.webp") right center / 290px auto;
+    url("/assets/artwork/button-bg.webp") right center / 290px auto;
 }
 
 .game-header__actions {
@@ -72,7 +72,7 @@
 .game-button:hover,
 .game-button:focus-visible {
   border-color: #f1dab3;
-  background: linear-gradient(0deg, #263965b0, #35518263), url("/button-bg.webp") center / cover, #30416b;
+  background: linear-gradient(0deg, #263965b0, #35518263), url("/assets/artwork/button-bg.webp") center / cover, #30416b;
 }
 
 .game-button--primary,
@@ -80,7 +80,7 @@
   border-color: #e7cc9f;
   background:
     linear-gradient(0deg, #18305857, #39365917),
-    url("/button-bg.webp") center / cover,
+    url("/assets/artwork/button-bg.webp") center / cover,
     #273f73;
   color: var(--brocade-light, #f3f6ff);
   box-shadow: inset 0 0 0 2px #080f2a73, inset 0 0 0 3px #e9cd9878, 0 3px 9px #0509147a;
@@ -111,7 +111,7 @@
 .game-player__stage {
   background:
     radial-gradient(ellipse at 50% 28%, #243052d9, #0a1022f8 70%),
-    url("/drop-bg-hh.webp") center / min(660px, 140vw) auto;
+    url("/assets/artwork/drop-bg-hh.webp") center / min(660px, 140vw) auto;
 }
 
 .game-player__frame {
@@ -165,13 +165,13 @@
   border-color: #b9cee7;
   background:
     linear-gradient(180deg, #152c6c37, #12163760),
-    url("/drop-bg-hh.webp") center / 180px auto,
+    url("/assets/artwork/drop-bg-hh.webp") center / 180px auto,
     #243b6c;
   box-shadow: inset 0 0 0 2px #e2ecf291, inset 0 0 8px #050917;
 }
 
 .game-drag span {
-  background: url("/drop-right.webp") center / cover, #254e79;
+  background: url("/assets/artwork/drop-right.webp") center / cover, #254e79;
   box-shadow: 0 0 0 1px #c1ddf1, 0 2px 5px #060a15;
   font-size: 0;
 }
@@ -189,7 +189,7 @@
 
 .game-wheel:not(.game-hold) span {
   position: relative;
-  background: url("/rotate-bg.webp") center / cover, #1c3463;
+  background: url("/assets/artwork/rotate-bg.webp") center / cover, #1c3463;
   color: #fff;
   text-shadow: 0 1px 5px #050b25;
 }
@@ -200,7 +200,7 @@
   top: 13%;
   width: 24%;
   height: 46%;
-  background: url("/arrow.webp") center / contain no-repeat;
+  background: url("/assets/artwork/arrow.webp") center / contain no-repeat;
   content: "";
 }
 
@@ -208,7 +208,7 @@
   background:
     radial-gradient(circle, #0c163dea 16%, transparent 54%),
     url("/longress-0.webp") center / 42% auto no-repeat,
-    url("/longress-1.webp") center / 92% auto no-repeat,
+    url("/assets/artwork/longress-1.webp") center / 92% auto no-repeat,
     #192b51;
   text-shadow: 0 1px 4px #000;
 }
@@ -261,10 +261,18 @@
   pointer-events: none;
 }
 
+.game-choice[data-choice="TIE"] { background-color: #75654d; }
+.game-choice[data-choice="DYE"] { background-color: #223957; }
+
+.game-choice__picture { display: contents; }
+
 .game-choice__art {
+  opacity: 0;
   filter: brightness(.76);
-  transition: filter .35s ease;
+  transition: opacity .2s ease-out, filter .35s ease;
 }
+
+.game-choice__art[data-ready="true"] { opacity: 1; }
 
 .game-choice[data-active="true"] .game-choice__art,
 .game-choice:focus-within .game-choice__art,
@@ -377,7 +385,7 @@
 .chapter-catalogue__header {
   background:
     linear-gradient(90deg, #172342fa 3%, #263960d1 48%, #34396830 100%),
-    url("/button-bg.webp") right center / min(76%, 630px) auto no-repeat,
+    url("/assets/artwork/button-bg.webp") right center / min(76%, 630px) auto no-repeat,
     #29334f;
   box-shadow: inset 0 -1px #e5c8989c;
 }
@@ -406,7 +414,7 @@
 .chapter-catalogue__sections {
   background:
     linear-gradient(95deg, #142244f5, #151f39f7),
-    url("/drop-bg-hh.webp") center / 540px auto;
+    url("/assets/artwork/drop-bg-hh.webp") center / 540px auto;
 }
 
 .chapter-catalogue__views button[aria-pressed="true"],
@@ -424,19 +432,19 @@
 .chapter-catalogue__scroll {
   background:
     linear-gradient(115deg, #101930ea, #121833ed 60%, #232649e8),
-    url("/drop-bg-hh.webp") center / 450px auto;
+    url("/assets/artwork/drop-bg-hh.webp") center / 450px auto;
 }
 
 .chapter-catalogue__grid button {
   border-color: #8695b779;
-  background: linear-gradient(100deg, #1b284bfd, #263653e5 78%, #24375e4f), url("/button-bg.webp") right center / 190px auto no-repeat, #1b284b;
+  background: linear-gradient(100deg, #1b284bfd, #263653e5 78%, #24375e4f), url("/assets/artwork/button-bg.webp") right center / 190px auto no-repeat, #1b284b;
   box-shadow: inset 0 0 0 2px #111a32bd, inset 0 0 0 3px #a8afd33a;
 }
 
 .chapter-catalogue__grid button:hover,
 .chapter-catalogue__grid button[aria-current="true"] {
   border-color: #e9ce9a;
-  background: linear-gradient(92deg, #25365df7, #2f4373e0 74%, #263f7257), url("/button-bg.webp") right center / 190px auto no-repeat, #263f72;
+  background: linear-gradient(92deg, #25365df7, #2f4373e0 74%, #263f7257), url("/assets/artwork/button-bg.webp") right center / 190px auto no-repeat, #263f72;
 }
 
 .chapter-catalogue__number {
@@ -463,6 +471,21 @@
 
 .chapter-catalogue__map .game-loading {
   min-height: 100%;
+}
+
+.chapter-catalogue__map [data-chapter] {
+  cursor: pointer;
+}
+
+.chapter-catalogue__map [data-map-outline] {
+  stroke: transparent;
+  stroke-width: 0;
+}
+
+.chapter-catalogue__map [data-chapter][aria-current="true"] > [data-map-outline],
+.chapter-catalogue__map [data-chapter]:focus-visible > [data-map-outline] {
+  stroke: white;
+  stroke-width: 16px;
 }
 
 .story-map-label {
@@ -504,7 +527,7 @@
   aspect-ratio: 1;
   border-radius: 50%;
   background:
-    url("/loading2.webp") center / cover no-repeat,
+    url("/assets/artwork/loading2.webp") center / cover no-repeat,
     radial-gradient(circle, #e7edffbf 0 27%, #afc3e3ac 39%, #849dcb50 46%, transparent 58%);
   filter: drop-shadow(0 0 8px #b1c2ff73);
   animation: tie-dye-spinner 1s linear infinite;

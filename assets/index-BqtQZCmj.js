@@ -545,7 +545,9 @@ function ChapterCatalogue({ bespoke, onClose }) {
             type: "button", "aria-pressed": !showMap, onClick: () => setShowMap(false), children: gameWords("Chapter list", "章节列表")
           }),
           y.jsx("button", {
-            type: "button", "aria-pressed": showMap, onClick: () => setShowMap(true), children: gameWords("Story map", "流程图")
+            type: "button", "aria-pressed": showMap, onClick: () => setShowMap(true),
+            onPointerEnter: prepareStoryMap, onPointerDown: prepareStoryMap, onFocus: prepareStoryMap,
+            children: gameWords("Story map", "流程图")
           })
         ]
       }),
@@ -608,25 +610,43 @@ function ChapterCatalogue({ bespoke, onClose }) {
 }
 
 let storyMapSvg;
-function HL({ bespoke }) {
-  const [map, setMap] = m.useState(() => ({ svg: storyMapSvg, failed: false }));
-  const [attempt, setAttempt] = m.useState(0);
-  m.useEffect(() => {
-    if (map.svg) return;
-    const controller = new AbortController();
-    fetch("/minimap.svg", { signal: controller.signal })
+let storyMapRequest;
+
+function loadStoryMap(priority = "auto") {
+  if (!storyMapRequest) {
+    storyMapRequest = fetch("/assets/story-map.svg?v=1", { priority })
       .then(response => {
         if (!response.ok) throw new Error("Story map unavailable");
         return response.text();
       })
       .then(svg => {
         storyMapSvg = svg;
-        setMap({ svg, failed: false });
+        return svg;
       })
       .catch(error => {
-        if (error.name !== "AbortError") setMap({ failed: true });
+        storyMapRequest = undefined;
+        throw error;
       });
-    return () => controller.abort();
+  }
+  return storyMapRequest;
+}
+
+function prepareStoryMap() {
+  loadStoryMap("low").catch(() => {});
+}
+
+function HL({ bespoke }) {
+  const [map, setMap] = m.useState(() => ({ svg: storyMapSvg, failed: false }));
+  const [attempt, setAttempt] = m.useState(0);
+  m.useEffect(() => {
+    if (map.svg) return;
+    let current = true;
+    loadStoryMap().then(svg => {
+      if (current) setMap({ svg, failed: false });
+    }, () => {
+      if (current) setMap({ failed: true });
+    });
+    return () => { current = false; };
   }, [attempt, map.svg]);
 
   if (map.svg) return y.jsx(KL, { value: map.svg, bespoke });
@@ -644,90 +664,41 @@ function HL({ bespoke }) {
   });
 }
 
-function setStoryMapWords(title, english, chinese) {
-  if (!title) return;
-  const primary = document.createElement("span");
-  primary.lang = "en";
-  primary.textContent = english;
-  const secondary = document.createElement("span");
-  secondary.lang = "zh-CN";
-  secondary.textContent = chinese;
-  title.classList.add("story-map-label");
-  title.replaceChildren(primary, secondary);
-}
-
 function KL({ value, bespoke }) {
   const { playEffect } = m.useContext(gameSession);
-  const [active, setActive] = m.useState(bespoke.active);
   const { setMenuOpen } = UL();
   const mapRef = m.useRef(null);
+  const chapter = bespoke.active.name;
 
-  m.useEffect(() => {
-    bespoke.on("onActiveChange", setActive);
-    return () => bespoke.off("onActiveChange", setActive);
-  }, [bespoke]);
+  m.useLayoutEffect(() => {
+    const map = mapRef.current;
+    map.querySelector('[data-chapter][aria-current]')?.removeAttribute("aria-current");
+    const chapterToReveal = chapter === "preview" ? "p1" : chapter;
+    const node = map.querySelector(`[data-chapter="${chapterToReveal}"]`);
+    if (!node) return;
+    if (chapter === chapterToReveal) node.setAttribute("aria-current", "true");
+    node.scrollIntoView({ behavior: "auto", block: "center", inline: "center" });
+  }, [value, chapter]);
 
-  m.useEffect(() => {
-    const [root, ...nodes] = mapRef.current.querySelectorAll('g[data-view-id^="topic-node:"]');
-    setStoryMapWords(root?.querySelector("foreignObject div"), "TIE-DYE", "扎染流程图");
-    const removeListeners = [];
-    const chapterToReveal = active.name === "preview" ? "p1" : active.name;
-
-    nodes.forEach(node => {
-      const chapterNumber = node.textContent.trimStart().match(/^(\d+(?:-\d+)?)/)?.[0];
-      const chapterId = "p" + chapterNumber;
-      if (!chapterNumber || !bespoke.slideshows.has(chapterId)) return;
-
-      node.style.cursor = "pointer";
-      node.setAttribute("role", "button");
-      node.setAttribute("tabindex", "0");
-      const chapter = catalogueChapters.find(item => item.number === chapterNumber);
-      node.setAttribute("aria-label", chapterNumber + ". " + gameLabel(chapter.english, chapter.title));
-      node.dataset.sound = Number.parseInt(chapterNumber, 10) >= 34 ? "water" : "cloth";
-      setStoryMapWords(node.querySelector("foreignObject div"), chapterNumber + ". " + chapter.english, chapter.title);
-
-      const border = Array.from(node.children).find(child =>
-        child.getAttribute("data-view-id")?.startsWith("topic-node-border:")
-      );
-      if (border) {
-        border.style.stroke = chapterId === active.name ? "white" : "transparent";
-        border.style.strokeWidth = chapterId === active.name ? "16px" : "0px";
-      }
-
-      const selectChapter = () => {
-        openChapter(bespoke, chapterId);
-        setMenuOpen(false);
-      };
-      const onKeyDown = event => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          playEffect(node.dataset.sound);
-          selectChapter();
-        }
-      };
-
-      node.addEventListener("click", selectChapter);
-      node.addEventListener("keydown", onKeyDown);
-      removeListeners.push(() => {
-        node.removeEventListener("click", selectChapter);
-        node.removeEventListener("keydown", onKeyDown);
-      });
-
-      if (chapterId === chapterToReveal) {
-        node.scrollIntoView({
-          behavior: "auto",
-          block: "center",
-          inline: "center"
-        });
-      }
-    });
-
-    return () => removeListeners.forEach(remove => remove());
-  }, [active, bespoke, setMenuOpen, playEffect]);
+  function select(event, keyboard = false) {
+    const node = event.target.closest?.("[data-chapter]");
+    const id = node?.dataset.chapter;
+    if (!id || !bespoke.slideshows.has(id)) return;
+    if (keyboard) {
+      event.preventDefault();
+      playEffect(node.dataset.sound);
+    }
+    openChapter(bespoke, id);
+    setMenuOpen(false);
+  }
 
   return y.jsx("div", {
     ref: mapRef,
     className: "w-[1920px] p-12",
+    onClick: select,
+    onKeyDown: event => {
+      if (event.key === "Enter" || event.key === " ") select(event, true);
+    },
     dangerouslySetInnerHTML: { __html: value }
   });
 }
@@ -893,7 +864,7 @@ function GameIntro({ cover = false }) {
           cover ? y.jsxs(y.Fragment, {
             children: [
               y.jsx("img", { className: "game-intro__logo", src: "/preview-title.webp", alt: "TIE-DYE" }),
-              y.jsx("img", { className: "game-intro__credits", src: "/WechatIMG524.jpg", alt: "Produced by Kompass Xu / 创作团队" })
+              y.jsx("img", { className: "game-intro__credits", src: "/assets/artwork/credits.webp", alt: "Produced by Kompass Xu / 创作团队" })
             ]
           }) : y.jsxs(y.Fragment, {
             children: [
@@ -1217,6 +1188,48 @@ const patternNames = {
   "Stone-wrapping": ["Stone Wrap", "包物扎"]
 };
 
+const sceneArtwork = {
+  "/f4d07d78dca4782d6f20cb233bb8457.jpg": ["tying.webp", "tying-mobile.webp"],
+  "/569119c037b93acef424214c6e70ec9.jpg": ["dyeing.webp", "dyeing-mobile.webp"],
+  "/spiral.png": ["spiral.webp"],
+  "/fish.png": ["fish.webp"],
+  "/prismatic.png": ["prismatic.webp"],
+  "/stone.png": ["stone.webp"]
+};
+
+function ChoiceArtwork({ original, priority }) {
+  const [ready, setReady] = m.useState(false);
+  const [useOriginal, setUseOriginal] = m.useState(false);
+  const [web, compact] = sceneArtwork[original] ?? [];
+  const source = !useOriginal && web ? "/assets/artwork/" + web : original;
+  return y.jsxs("picture", {
+    className: "game-choice__picture",
+    children: [
+      !useOriginal && compact && y.jsx("source", {
+        media: "(orientation: portrait) and (max-width: 760px)", srcSet: "/assets/artwork/" + compact
+      }),
+      y.jsx("img", {
+        className: "game-choice__art",
+        src: source, alt: "", decoding: "async", fetchPriority: priority ? "high" : "auto",
+        "data-ready": ready,
+        onLoad: event => {
+          const image = event.currentTarget;
+          const loaded = image.currentSrc;
+          const show = () => {
+            if (image.isConnected && image.complete && image.naturalWidth && image.currentSrc === loaded) setReady(true);
+          };
+          if (image.decode) image.decode().then(show, show);
+          else show();
+        },
+        onError: () => {
+          setReady(false);
+          setUseOriginal(true);
+        }
+      })
+    ]
+  });
+}
+
 function mS({ bespoke, items, initialActive = 0, expandedShare }) {
   const [selected, setSelected] = m.useState(initialActive);
   const { playEffect } = m.useContext(gameSession);
@@ -1263,10 +1276,7 @@ function mS({ bespoke, items, initialActive = 0, expandedShare }) {
             "data-active": active,
             "data-choice": item.title,
             children: [
-              y.jsx("img", {
-                className: "game-choice__art", src: item.bg, alt: "", decoding: "async",
-                fetchPriority: index === initialActive ? "high" : "auto"
-              }),
+              y.jsx(ChoiceArtwork, { original: item.bg, priority: index === initialActive }),
               y.jsx("button", {
                 className: "game-choice__preview",
                 type: "button",
